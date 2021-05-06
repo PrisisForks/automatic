@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -27,6 +27,9 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use function count;
+use function method_exists;
+use function sprintf;
 
 final class AuditCommand extends BaseCommand
 {
@@ -102,10 +105,10 @@ EOF
         if (! $isNotDevMode) {
             $message = 'Check is running in no-dev mode. Skipping dev requirements check.';
 
-            if (\method_exists($output, 'comment')) {
+            if (method_exists($output, 'comment')) {
                 $output->comment($message);
             } else {
-                $output->writeln(\sprintf('<comment>%s</>', $message));
+                $output->writeln(sprintf('<comment>%s</>', $message));
             }
         }
 
@@ -131,13 +134,13 @@ EOF
 
         $message = 'This checker can only detect vulnerabilities that are referenced in the SensioLabs security or the Github security advisories database.';
 
-        if (\method_exists($output, 'comment')) {
+        if (method_exists($output, 'comment')) {
             $output->comment($message);
         } else {
-            $output->writeln(\sprintf('<comment>%s</>', $message));
+            $output->writeln(sprintf('<comment>%s</>', $message));
         }
 
-        if (\count($messages) !== 0) {
+        if (count($messages) !== 0) {
             $output->note('Please report this found messages to https://github.com/narrowspark/security-advisories.');
 
             foreach ($messages as $key => $msg) {
@@ -145,9 +148,7 @@ EOF
             }
         }
 
-        $count = \count($vulnerabilities);
-
-        if (\count($vulnerabilities) !== 0) {
+        if (($count = count($vulnerabilities)) !== 0) {
             switch ($input->getOption('format')) {
                 case 'json':
                     $formatter = new JsonFormatter();
@@ -164,7 +165,7 @@ EOF
 
             $formatter->displayResults($output, $vulnerabilities);
 
-            $output->writeln('<error>[!]</> ' . \sprintf('%s vulnerabilit%s found - ', $count, $count === 1 ? 'y' : 'ies')
+            $output->writeln('<error>[!]</> ' . sprintf('%s vulnerabilit%s found - ', $count, $count === 1 ? 'y' : 'ies')
                 . 'We recommend you to check the related security advisories and upgrade these dependencies.');
 
             return $errorExitCode;

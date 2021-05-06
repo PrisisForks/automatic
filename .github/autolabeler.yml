@@ -1,4 +1,5 @@
 'Component: Automatic': ["src/Automatic"]
 'Component: Common': ["src/Common"]
-'Component: Prefetcher': ["src/Prefetcher"]
+'Component: Prefetcher': ["src/LegacyFilter"]
 'Component: Security': ["src/Security"]
+'Component: Versions': ["src/Versions"]

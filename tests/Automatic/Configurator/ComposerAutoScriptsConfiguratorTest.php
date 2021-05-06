@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -23,7 +23,8 @@ use Narrowspark\Automatic\Common\Contract\Package as PackageContract;
 use Narrowspark\Automatic\Common\Traits\GetGenericPropertyReaderTrait;
 use Narrowspark\Automatic\Configurator\ComposerAutoScriptsConfigurator;
 use Narrowspark\Automatic\Tests\Fixture\ComposerJsonFactory;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
+use function unlink;
 
 /**
  * @internal
@@ -32,7 +33,7 @@ use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
  *
  * @medium
  */
-final class ComposerAutoScriptsConfiguratorTest extends MockeryTestCase
+final class ComposerAutoScriptsConfiguratorTest extends AbstractMockeryTestCase
 {
     use GetGenericPropertyReaderTrait;
 
@@ -113,7 +114,7 @@ final class ComposerAutoScriptsConfiguratorTest extends MockeryTestCase
 
         $this->configurator->configure($packageMock);
 
-        \unlink($composerJsonPath);
+        unlink($composerJsonPath);
     }
 
     public function testUnconfigure(): void
@@ -145,7 +146,7 @@ final class ComposerAutoScriptsConfiguratorTest extends MockeryTestCase
 
         $this->configurator->unconfigure($packageMock);
 
-        \unlink($composerJsonPath);
+        unlink($composerJsonPath);
     }
 
     /**

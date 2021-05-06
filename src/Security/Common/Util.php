@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -15,10 +15,16 @@ namespace Narrowspark\Automatic\Security\Common;
 
 use Composer\Composer;
 use Composer\Factory;
+use Composer\IO\IOInterface;
 use Composer\Json\JsonFile;
 use Composer\Json\JsonManipulator;
+use Composer\Package\Locker;
+use Exception;
 use InvalidArgumentException;
 use Narrowspark\Automatic\Security\Common\Contract\Exception\RuntimeException;
+use function file_get_contents;
+use function preg_match;
+use function substr;
 
 final class Util
 {
@@ -35,11 +41,13 @@ final class Util
      * Return the composer json file and json manipulator.
      *
      * @throws InvalidArgumentException
+     *
+     * @return array{0: \Composer\Json\JsonFile, 1: \Composer\Json\JsonManipulator}
      */
     public static function getComposerJsonFileAndManipulator(): array
     {
         $json = new JsonFile(Factory::getComposerFile());
-        $manipulator = new JsonManipulator(\file_get_contents($json->getPath()));
+        $manipulator = new JsonManipulator(file_get_contents($json->getPath()));
 
         return [$json, $manipulator];
     }
@@ -49,7 +57,7 @@ final class Util
      */
     public static function getComposerLockFile(): string
     {
-        return \substr(Factory::getComposerFile(), 0, -4) . 'lock';
+        return substr(Factory::getComposerFile(), 0, -4) . 'lock';
     }
 
     /**
@@ -59,18 +67,43 @@ final class Util
      */
     public static function getComposerVersion(): string
     {
-        \preg_match('/\d+.\d+.\d+/m', Composer::VERSION, $matches);
+        preg_match('/\d+.\d+.\d+/m', Composer::VERSION, $versionMatches);
 
-        if ($matches !== null) {
-            return $matches[0];
+        if ($versionMatches !== null) {
+            return $versionMatches[0];
         }
 
-        \preg_match('/\d+.\d+.\d+/m', Composer::BRANCH_ALIAS_VERSION, $matches);
+        preg_match('/\d+.\d+.\d+/m', Composer::BRANCH_ALIAS_VERSION, $branchAliasMatches);
 
-        if ($matches !== null) {
-            return $matches[0];
+        if ($branchAliasMatches !== null) {
+            return $branchAliasMatches[0];
         }
 
         throw new RuntimeException('No composer version found.');
+    }
+
+    /**
+     * Update composer.lock file with the composer.json change.
+     *
+     * @throws Exception
+     */
+    public static function updateComposerLock(Composer $composer, IOInterface $io): void
+    {
+        $composerLockPath = Util::getComposerLockFile();
+        $composerJson = file_get_contents(Factory::getComposerFile());
+
+        $lockFile = new JsonFile($composerLockPath, null, $io);
+        $locker = new Locker(
+            $io,
+            $lockFile,
+            $composer->getRepositoryManager(),
+            $composer->getInstallationManager(),
+            (string) $composerJson
+        );
+
+        $lockData = $locker->getLockData();
+        $lockData['content-hash'] = Locker::getContentHash((string) $composerJson);
+
+        $lockFile->write($lockData);
     }
 }

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -17,6 +17,28 @@ use Closure;
 use Narrowspark\Automatic\Common\Contract\Resettable as ResettableContract;
 use SplFileInfo;
 use Symfony\Component\Finder\Finder;
+use const DIRECTORY_SEPARATOR;
+use const SORT_STRING;
+use const T_ABSTRACT;
+use const T_CLASS;
+use const T_INTERFACE;
+use const T_NAME_QUALIFIED;
+use const T_NAMESPACE;
+use const T_NS_SEPARATOR;
+use const T_STRING;
+use const T_TRAIT;
+use const T_WHITESPACE;
+use function array_map;
+use function array_merge;
+use function array_unique;
+use function count;
+use function file_get_contents;
+use function gc_mem_caches;
+use function is_array;
+use function ltrim;
+use function rtrim;
+use function token_get_all;
+use function trim;
 
 final class ClassFinder implements ResettableContract
 {
@@ -134,8 +156,8 @@ final class ClassFinder implements ResettableContract
      */
     public function setExcludes(array $excludes): self
     {
-        $this->excludes = \array_map(static function (string $value): string {
-            return \trim($value, '/');
+        $this->excludes = array_map(static function (string $value): string {
+            return trim($value, '/');
         }, $excludes);
 
         return $this;
@@ -212,13 +234,13 @@ final class ClassFinder implements ResettableContract
      */
     public function find(): self
     {
-        $preparedPaths = \array_unique(
-            \array_merge(
+        $preparedPaths = array_unique(
+            array_merge(
                 $this->getPreparedPaths($this->paths['psr0']),
                 $this->getPreparedPaths($this->paths['psr4']),
                 $this->getPreparedPaths($this->paths['classmap'])
             ),
-            \SORT_STRING
+            SORT_STRING
         );
 
         $finder = Finder::create()
@@ -237,53 +259,53 @@ final class ClassFinder implements ResettableContract
             $realPath = (string) $file->getRealPath();
 
             $namespace = null;
-            $tokens = \token_get_all((string) \file_get_contents($realPath));
+            $tokens = token_get_all((string) file_get_contents($realPath));
 
             foreach ($tokens as $key => $token) {
-                if (\is_array($token)) {
-                    if ($token[0] === \T_NAMESPACE) {
+                if (is_array($token)) {
+                    if ($token[0] === T_NAMESPACE) {
                         $namespace = self::getNamespace($key + 2, $tokens);
-                    } elseif ($token[0] === \T_INTERFACE) {
+                    } elseif ($token[0] === T_INTERFACE) {
                         $name = self::getName($key + 2, $tokens);
 
                         if ($name === null) {
                             continue 2;
                         }
 
-                        $this->interfaces[\ltrim($namespace . '\\' . $name, '\\')] = $realPath;
-                    } elseif ($token[0] === \T_TRAIT) {
+                        $this->interfaces[ltrim($namespace . '\\' . $name, '\\')] = $realPath;
+                    } elseif ($token[0] === T_TRAIT) {
                         $name = self::getName($key + 2, $tokens);
 
                         if ($name === null) {
                             continue 2;
                         }
 
-                        $this->traits[\ltrim($namespace . '\\' . $name, '\\')] = $realPath;
-                    } elseif ($token[0] === \T_ABSTRACT) {
+                        $this->traits[ltrim($namespace . '\\' . $name, '\\')] = $realPath;
+                    } elseif ($token[0] === T_ABSTRACT) {
                         $name = self::getName($key + 4, $tokens);
 
                         if ($name === null) {
                             continue 2;
                         }
 
-                        $this->abstractClasses[\ltrim($namespace . '\\' . $name, '\\')] = $realPath;
+                        $this->abstractClasses[ltrim($namespace . '\\' . $name, '\\')] = $realPath;
 
                         continue 2;
-                    } elseif ($token[0] === \T_CLASS) {
+                    } elseif ($token[0] === T_CLASS) {
                         $name = self::getName($key + 2, $tokens);
 
                         if ($name === null) {
                             continue 2;
                         }
 
-                        $this->classes[\ltrim($namespace . '\\' . $name, '\\')] = $realPath;
+                        $this->classes[ltrim($namespace . '\\' . $name, '\\')] = $realPath;
                     }
                 }
             }
 
             unset($tokens);
             // PHP 7 memory manager will not release after token_get_all(), see https://bugs.php.net/70098
-            \gc_mem_caches();
+            gc_mem_caches();
         }
 
         return $this;
@@ -296,7 +318,7 @@ final class ClassFinder implements ResettableContract
      */
     public function getAll(): array
     {
-        return \array_merge(
+        return array_merge(
             $this->interfaces,
             $this->traits,
             $this->abstractClasses,
@@ -326,7 +348,7 @@ final class ClassFinder implements ResettableContract
     private static function getNamespace(int $key, array $tokens): ?string
     {
         $namespace = null;
-        $tokenCount = \count($tokens);
+        $tokenCount = count($tokens);
 
         for ($i = $key; $i < $tokenCount; $i++) {
             if (self::isPartOfNamespace($tokens[$i])) {
@@ -346,7 +368,7 @@ final class ClassFinder implements ResettableContract
      */
     private static function isPartOfNamespace($token): bool
     {
-        return \is_array($token) && ($token[0] === \T_STRING || $token[0] === \T_NS_SEPARATOR);
+        return is_array($token) && ($token[0] === T_STRING || $token[0] === T_NS_SEPARATOR || $token[0] === T_NAME_QUALIFIED);
     }
 
     /**
@@ -355,13 +377,13 @@ final class ClassFinder implements ResettableContract
     private static function getName(int $key, array $tokens): ?string
     {
         $class = null;
-        $tokenCount = \count($tokens);
+        $tokenCount = count($tokens);
 
         for ($i = $key; $i < $tokenCount; $i++) {
-            if (\is_array($tokens[$i])) {
-                if ($tokens[$i][0] === \T_STRING) {
+            if (is_array($tokens[$i])) {
+                if ($tokens[$i][0] === T_STRING) {
                     $class .= $tokens[$i][1];
-                } elseif ($tokens[$i][0] === \T_WHITESPACE) {
+                } elseif ($tokens[$i][0] === T_WHITESPACE) {
                     return $class;
                 }
             }
@@ -380,12 +402,12 @@ final class ClassFinder implements ResettableContract
         $fullPaths = [];
 
         foreach ($paths as $name => $path) {
-            if (\is_array($path)) {
+            if (is_array($path)) {
                 foreach ($path as $p) {
-                    $fullPaths[] = \rtrim($this->vendorDir . \DIRECTORY_SEPARATOR . $name . \DIRECTORY_SEPARATOR . $p, '/');
+                    $fullPaths[] = rtrim($this->vendorDir . DIRECTORY_SEPARATOR . $name . DIRECTORY_SEPARATOR . $p, '/');
                 }
             } else {
-                $fullPaths[] = \rtrim($this->vendorDir . \DIRECTORY_SEPARATOR . $name . \DIRECTORY_SEPARATOR . $path, '/');
+                $fullPaths[] = rtrim($this->vendorDir . DIRECTORY_SEPARATOR . $name . DIRECTORY_SEPARATOR . $path, '/');
             }
         }
 

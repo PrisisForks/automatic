@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -27,8 +27,10 @@ use Narrowspark\Automatic\Contract\PackageConfigurator as PackageConfiguratorCon
 use Narrowspark\Automatic\Operation\Install;
 use Narrowspark\Automatic\ScriptExecutor;
 use Narrowspark\Automatic\Tests\Fixture\Tests\TransformWithScriptsExecutor\Automatic\TestExecutor;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
 use Narrowspark\Automatic\Tests\Operation\Traits\ArrangeOperationsClassesTrait;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
+use const DIRECTORY_SEPARATOR;
+use function str_replace;
 
 /**
  * @internal
@@ -37,7 +39,7 @@ use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
  *
  * @medium
  */
-final class InstallTest extends MockeryTestCase
+final class InstallTest extends AbstractMockeryTestCase
 {
     use ArrangeOperationsClassesTrait;
 
@@ -289,7 +291,7 @@ final class InstallTest extends MockeryTestCase
                 ScriptExecutor::TYPE,
                 $name,
                 [
-                    TestExecutor::class => $this->fixturePath . \DIRECTORY_SEPARATOR . \str_replace('/', \DIRECTORY_SEPARATOR, $packageName) . \DIRECTORY_SEPARATOR . 'Automatic' . \DIRECTORY_SEPARATOR . 'TestExecutor.php',
+                    TestExecutor::class => $this->fixturePath . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $packageName) . DIRECTORY_SEPARATOR . 'Automatic' . DIRECTORY_SEPARATOR . 'TestExecutor.php',
                 ]
             );
         $this->lockMock->shouldReceive('addSub')

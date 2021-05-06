@@ -26,20 +26,25 @@
         }
     ],
     "require": {
-        "php": "^7.3",
+        "php": "^8.0",
         "ext-json": "*",
         "ext-tokenizer": "*",
-        "composer-plugin-api": "^1.0"
+        "composer-plugin-api": "^2.0"
     },
     "require-dev": {
-        "composer/composer": "^1.10.5",
-        "mockery/mockery": "^1.3.1",
-        "narrowspark/testing-helper": "^8.0.2",
-        "nyholm/nsa": "^1.1.0",
-        "phpunit/phpunit": "^8.5.4",
-        "ocramius/package-versions": "^1.5.1",
-        "justinrainbow/json-schema": "^4.0 || ^5.0",
-        "symfony/process": "^5.0.8"
+        "composer/composer": "^2.0",
+        "mockery/mockery": "^1.4.3",
+        "nyholm/nsa": "^1.2.1",
+        "phpunit/phpunit": "^9.5.2",
+        "narrowspark/coding-standard": "^5.2.3",
+        "ocramius/package-versions": "^2.3.0",
+        "justinrainbow/json-schema": "^5.0",
+        "symfony/process": "^5.0.0",
+        "knplabs/github-api": "^3.0",
+        "guzzlehttp/guzzle": "^7.0.1",
+        "http-interop/http-factory-guzzle": "^1.0",
+        "symfony/filesystem": "^5.2.0",
+        "php-http/curl-client": "^2.2.0"
     },
     "config": {
         "optimize-autoloader": true,
@@ -47,20 +52,24 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "0.13.x-dev"
+            "dev-master": "0.13-dev"
         },
         "class": [
-            "Narrowspark\\Automatic\\Prefetcher\\Plugin",
+            "Narrowspark\\Automatic\\AutoScripts\\Plugin",
+            "Narrowspark\\Automatic\\LegacyFilter\\Plugin",
             "Narrowspark\\Automatic\\Security\\Plugin",
+            "Narrowspark\\Automatic\\Skeleton\\Plugin",
             "Narrowspark\\Automatic\\Automatic"
         ]
     },
     "autoload": {
         "psr-4": {
             "Narrowspark\\Automatic\\": "src/Automatic/",
+            "Narrowspark\\Automatic\\AutoScripts\\": "src/AutoScripts/",
             "Narrowspark\\Automatic\\Common\\": "src/Common/",
-            "Narrowspark\\Automatic\\Prefetcher\\": "src/Prefetcher/",
-            "Narrowspark\\Automatic\\Security\\": "src/Security/"
+            "Narrowspark\\Automatic\\LegacyFilter\\": "src/LegacyFilter/",
+            "Narrowspark\\Automatic\\Security\\": "src/Security/",
+            "Narrowspark\\Automatic\\Skeleton\\": "src/Skeleton/"
         },
         "exclude-from-classmap": [
             "/tests/"
@@ -69,41 +78,40 @@
     "autoload-dev": {
         "psr-4": {
             "Narrowspark\\Automatic\\Tests\\": "tests/Automatic/",
+            "Narrowspark\\Automatic\\Tests\\Helper\\": "tests/Helper/",
+            "Narrowspark\\Automatic\\Tests\\AutoScripts\\": "tests/AutoScripts/",
             "Narrowspark\\Automatic\\Tests\\Common\\": "tests/Common/",
             "Narrowspark\\Automatic\\Tests\\AutoReview\\": "tests/AutoReview/",
-            "Narrowspark\\Automatic\\Tests\\Prefetcher\\": "tests/Prefetcher/",
-            "Narrowspark\\Automatic\\Tests\\Security\\": "tests/Security/"
+            "Narrowspark\\Automatic\\Tests\\LegacyFilter\\": "tests/LegacyFilter/",
+            "Narrowspark\\Automatic\\Tests\\Security\\": "tests/Security/",
+            "Narrowspark\\Automatic\\Tests\\Skeleton\\": "tests/Skeleton/"
         },
         "files": [
             "tests/Automatic/FunctionMock.php",
-            "tests/Prefetcher/FunctionMock.php"
+            "tests/LegacyFilter/FunctionMock.php"
         ]
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
     "scripts": {
-        "changelog": "composer --working-dir=./.build changelog-generator",
-        "coverage": [
-            "phpunit --dump-xdebug-filter=./.build/phpunit/.xdebug-filter.php",
-            "phpunit --prepend=./.build/phpunit/.xdebug-filter.php --coverage-html=./.build/phpunit/coverage"
-        ],
-        "cs": "composer --working-dir=./.build cs -- -v",
-        "cs:check": "composer --working-dir=./.build cs:check -- -v",
-        "phpstan": "composer --working-dir=./.build phpstan -- --memory-limit=-1",
-        "psalm": "composer --working-dir=./.build psalm",
-        "psalm:fix": "composer --working-dir=./.build psalm:fix",
-        "infection": "composer --working-dir=./.build infection -- --min-covered-msi=100 --min-msi=100",
-        "rector-src": "composer --working-dir=./.build rector-src",
-        "rector-src:fix": "composer --working-dir=./.build rector-src:fix",
-        "rector-tests": "composer --working-dir=./.build rector-tests",
-        "rector-tests:fix": "composer --working-dir=./.build rector-tests:fix",
+        "cs": "php-cs-fixer fix --config=\"./.php_cs\" --ansi",
+        "cs:check": "php-cs-fixer fix --config=\"./.php_cs\" --ansi --dry-run",
+        "infection": "XDEBUG_MODE=coverage infection --configuration=\"./infection.json\" -j$(nproc) --ansi",
+        "phpstan": "phpstan analyse -c ./phpstan.neon --ansi --memory-limit=-1",
+        "phpstan:baseline": "phpstan analyse -c ./phpstan.neon --ansi --generate-baseline --memory-limit=-1",
+        "psalm": "psalm --threads=$(nproc)",
+        "psalm:baseline": "psalm --threads=$(nproc) --set-baseline=psalm-baseline.xml",
+        "psalm:baseline:update": "psalm --threads=$(nproc) --update-baseline",
+        "psalm:fix": "psalm --alter --issues=all --threads=$(nproc)",
+        "rector": "rector process --ansi --dry-run",
+        "rector:fix": "rector process --ansi",
         "test": "phpunit",
-        "post-install-cmd": "composer --working-dir=./.build install --lock",
-        "post-update-cmd": "composer --working-dir=./.build update --lock",
+        "test:coverage": "phpunit --coverage-html=./.build/phpunit/coverage",
         "test:common": "phpunit --testsuite=\"Narrowspark Automatic Common Test Suite\"",
         "test:automatic": "phpunit --testsuite=\"Narrowspark Automatic Test Suite\"",
-        "test:prefetcher": "phpunit --testsuite=\"Narrowspark Automatic Prefetcher Test Suite\"",
-        "test:security": "phpunit --testsuite=\"Narrowspark Automatic Security Test Suite\""
+        "test:legacy-filter": "phpunit --testsuite=\"Narrowspark Automatic LegacyFilter Test Suite\"",
+        "test:security": "phpunit --testsuite=\"Narrowspark Automatic Security Test Suite\"",
+        "update:aliases": "php .build/mirror/bin/update-mirror-classes.php"
     },
     "support": {
         "issues": "https://github.com/narrowspark/automatic/issues",

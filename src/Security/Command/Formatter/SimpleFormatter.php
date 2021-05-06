@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -15,6 +15,10 @@ namespace Narrowspark\Automatic\Security\Command\Formatter;
 
 use Narrowspark\Automatic\Security\Contract\Command\Formatter as FormatterContract;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use function array_key_exists;
+use function count;
+use function str_repeat;
+use function strlen;
 
 final class SimpleFormatter implements FormatterContract
 {
@@ -23,23 +27,23 @@ final class SimpleFormatter implements FormatterContract
      */
     public function displayResults(SymfonyStyle $output, array $vulnerabilities): void
     {
-        if (\count($vulnerabilities) !== 0) {
+        if (count($vulnerabilities) !== 0) {
             foreach ($vulnerabilities as $dependency => $issues) {
                 $dependencyFullName = $dependency . ' (' . $issues['version'] . ')';
 
-                $output->writeln('<info>' . $dependencyFullName . "\n" . \str_repeat('-', \strlen($dependencyFullName)) . "</>\n");
+                $output->writeln('<info>' . $dependencyFullName . "\n" . str_repeat('-', strlen($dependencyFullName)) . "</>\n");
 
                 foreach ($issues['advisories'] as $details) {
                     $output->write(' * ');
                     $cve = null;
 
-                    if (\array_key_exists('cve', $details) && $details['cve'] !== '') {
+                    if (array_key_exists('cve', $details) && $details['cve'] !== '') {
                         $cve = $details['cve'];
                     }
 
                     $link = null;
 
-                    if (\array_key_exists('link', $details) && $details['link'] !== '') {
+                    if (array_key_exists('link', $details) && $details['link'] !== '') {
                         $link = $details['link'];
                     }
 

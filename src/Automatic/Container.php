@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -16,21 +16,20 @@ namespace Narrowspark\Automatic;
 use Composer\Composer;
 use Composer\Config;
 use Composer\IO\IOInterface;
-use Composer\Util\ProcessExecutor;
 use Narrowspark\Automatic\Common\AbstractContainer;
 use Narrowspark\Automatic\Common\ClassFinder;
 use Narrowspark\Automatic\Common\Contract\Container as ContainerContract;
-use Narrowspark\Automatic\Common\ScriptExtender\PhpScriptExtender;
+use Narrowspark\Automatic\Common\Lock;
 use Narrowspark\Automatic\Common\Traits\GetGenericPropertyReaderTrait;
 use Narrowspark\Automatic\Contract\Configurator as ConfiguratorContract;
 use Narrowspark\Automatic\Contract\PackageConfigurator as PackageConfiguratorContract;
 use Narrowspark\Automatic\Installer\ConfiguratorInstaller;
-use Narrowspark\Automatic\Installer\SkeletonInstaller;
 use Narrowspark\Automatic\Operation\Install;
 use Narrowspark\Automatic\Operation\Uninstall;
-use Narrowspark\Automatic\ScriptExtender\ScriptExtender;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use function array_merge;
+use function rtrim;
 
 /**
  * @internal
@@ -39,9 +38,6 @@ final class Container extends AbstractContainer
 {
     use GetGenericPropertyReaderTrait;
 
-    /**
-     * Instantiate the container.
-     */
     public function __construct(Composer $composer, IOInterface $io)
     {
         $genericPropertyReader = $this->getGenericPropertyReader();
@@ -57,10 +53,10 @@ final class Container extends AbstractContainer
                 return $io;
             },
             'vendor-dir' => static function (ContainerContract $container): string {
-                return \rtrim($container->get(Config::class)->get('vendor-dir'), '/');
+                return rtrim($container->get(Config::class)->get('vendor-dir'), '/');
             },
             'composer-extra' => static function (ContainerContract $container): array {
-                return \array_merge(
+                return array_merge(
                     [
                         Automatic::COMPOSER_EXTRA_KEY => [
                             'allow-auto-install' => false,
@@ -81,14 +77,6 @@ final class Container extends AbstractContainer
             },
             ConfiguratorInstaller::class => static function (ContainerContract $container): ConfiguratorInstaller {
                 return new ConfiguratorInstaller(
-                    $container->get(IOInterface::class),
-                    $container->get(Composer::class),
-                    $container->get(Lock::class),
-                    $container->get(ClassFinder::class)
-                );
-            },
-            SkeletonInstaller::class => static function (ContainerContract $container): SkeletonInstaller {
-                return new SkeletonInstaller(
                     $container->get(IOInterface::class),
                     $container->get(Composer::class),
                     $container->get(Lock::class),
@@ -128,19 +116,6 @@ final class Container extends AbstractContainer
                     $container->get(PackageConfiguratorContract::class),
                     $container->get(ClassFinder::class)
                 );
-            },
-            ScriptExecutor::class => static function (ContainerContract $container): ScriptExecutor {
-                $scriptExecutor = new ScriptExecutor(
-                    $container->get(Composer::class),
-                    $container->get(IOInterface::class),
-                    new ProcessExecutor(),
-                    $container->get('composer-extra')
-                );
-
-                $scriptExecutor->add(ScriptExtender::getType(), ScriptExtender::class);
-                $scriptExecutor->add(PhpScriptExtender::getType(), PhpScriptExtender::class);
-
-                return $scriptExecutor;
             },
             Filesystem::class => static function (): Filesystem {
                 return new Filesystem();

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -20,6 +20,8 @@ use Narrowspark\Automatic\Common\ClassFinder;
 use Narrowspark\Automatic\Configurator;
 use Narrowspark\Automatic\Lock;
 use Narrowspark\Automatic\PackageConfigurator;
+use const DIRECTORY_SEPARATOR;
+use function dirname;
 
 trait ArrangeOperationsClassesTrait
 {
@@ -46,7 +48,7 @@ trait ArrangeOperationsClassesTrait
 
     protected function arrangeOperationsClasses(): void
     {
-        $this->fixturePath = \dirname(__DIR__, 2) . \DIRECTORY_SEPARATOR . 'Fixture';
+        $this->fixturePath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'Fixture';
 
         $this->lockMock = Mockery::mock(Lock::class);
         $this->ioMock = Mockery::mock(IOInterface::class);

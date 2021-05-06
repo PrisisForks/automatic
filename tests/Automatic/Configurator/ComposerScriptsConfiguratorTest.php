@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -25,7 +25,11 @@ use Narrowspark\Automatic\Common\Traits\GetGenericPropertyReaderTrait;
 use Narrowspark\Automatic\Configurator\ComposerScriptsConfigurator;
 use Narrowspark\Automatic\QuestionFactory;
 use Narrowspark\Automatic\Tests\Fixture\ComposerJsonFactory;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
+use function file_put_contents;
+use function json_encode;
+use function sprintf;
+use function unlink;
 
 /**
  * @internal
@@ -34,7 +38,7 @@ use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
  *
  * @medium
  */
-final class ComposerScriptsConfiguratorTest extends MockeryTestCase
+final class ComposerScriptsConfiguratorTest extends AbstractMockeryTestCase
 {
     use GetGenericPropertyReaderTrait;
 
@@ -100,7 +104,7 @@ final class ComposerScriptsConfiguratorTest extends MockeryTestCase
             ->andReturn($composerRootJsonData);
 
         $composerJsonPath = __DIR__ . '/composer.json';
-        \file_put_contents($composerJsonPath, \json_encode(['extra' => []]));
+        file_put_contents($composerJsonPath, json_encode(['extra' => []]));
 
         $this->jsonMock->shouldReceive('getPath')
             ->once()
@@ -128,7 +132,7 @@ final class ComposerScriptsConfiguratorTest extends MockeryTestCase
 
         $this->configurator->configure($package);
 
-        \unlink($composerJsonPath);
+        unlink($composerJsonPath);
     }
 
     public function testConfigureWithUpdate(): void
@@ -152,7 +156,7 @@ final class ComposerScriptsConfiguratorTest extends MockeryTestCase
 
         $composerJsonPath = __DIR__ . '/composer.json';
 
-        \file_put_contents($composerJsonPath, \json_encode(['extra' => []]));
+        file_put_contents($composerJsonPath, json_encode(['extra' => []]));
 
         $this->jsonMock->shouldReceive('getPath')
             ->once()
@@ -178,7 +182,7 @@ final class ComposerScriptsConfiguratorTest extends MockeryTestCase
 
         $this->configurator->configure($package);
 
-        \unlink($composerJsonPath);
+        unlink($composerJsonPath);
     }
 
     public function testConfigureWithBlacklist(): void
@@ -225,7 +229,7 @@ final class ComposerScriptsConfiguratorTest extends MockeryTestCase
             ->andReturn($composerRootJsonData);
 
         $composerJsonPath = __DIR__ . '/composer.json';
-        \file_put_contents($composerJsonPath, \json_encode(['extra' => []]));
+        file_put_contents($composerJsonPath, json_encode(['extra' => []]));
 
         $this->jsonMock->shouldReceive('getPath')
             ->once()
@@ -253,7 +257,7 @@ final class ComposerScriptsConfiguratorTest extends MockeryTestCase
 
         $this->ioMock->shouldReceive('write')
             ->once()
-            ->with(\sprintf(
+            ->with(sprintf(
                 "<warning>    Found not allowed composer events [notallowed] in [%s]</>\n",
                 $package->getName()
             ))
@@ -261,7 +265,7 @@ final class ComposerScriptsConfiguratorTest extends MockeryTestCase
 
         $this->configurator->configure($package);
 
-        \unlink($composerJsonPath);
+        unlink($composerJsonPath);
     }
 
     public function testConfigureWithoutScripts(): void
@@ -313,7 +317,7 @@ final class ComposerScriptsConfiguratorTest extends MockeryTestCase
 
         $this->configurator->unconfigure($package);
 
-        \unlink($composerJsonPath);
+        unlink($composerJsonPath);
     }
 
     /**

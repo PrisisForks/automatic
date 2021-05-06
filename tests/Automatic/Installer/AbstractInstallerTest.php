@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -21,13 +21,14 @@ use Narrowspark\Automatic\Automatic;
 use Narrowspark\Automatic\Common\ClassFinder;
 use Narrowspark\Automatic\Common\Contract\Exception\UnexpectedValueException;
 use Narrowspark\Automatic\Lock;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
 use Narrowspark\Automatic\Tests\Traits\ArrangeComposerClassesTrait;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
+use function trim;
 
 /**
  * @internal
  */
-abstract class AbstractInstallerTest extends MockeryTestCase
+abstract class AbstractInstallerTest extends AbstractMockeryTestCase
 {
     use ArrangeComposerClassesTrait;
 
@@ -130,7 +131,7 @@ abstract class AbstractInstallerTest extends MockeryTestCase
             ->andReturn($name);
         $this->packageMock->shouldReceive('getName')
             ->times(3)
-            ->andReturn(\trim($name, '/'));
+            ->andReturn(trim($name, '/'));
 
         $this->packageMock->shouldReceive('getTargetDir')
             ->andReturn(null);
@@ -166,12 +167,12 @@ abstract class AbstractInstallerTest extends MockeryTestCase
         $this->packageMock->shouldReceive('getPrettyName')
             ->andReturn($name);
         $this->packageMock->shouldReceive('getName')
-            ->andReturn(\trim($name, '/'));
+            ->andReturn(trim($name, '/'));
 
         $this->targetPackageMock->shouldReceive('getPrettyName')
             ->andReturn($name);
         $this->targetPackageMock->shouldReceive('getName')
-            ->andReturn(\trim($name, '/'));
+            ->andReturn(trim($name, '/'));
         $this->targetPackageMock->shouldReceive('getTargetDir')
             ->andReturn('');
         $this->targetPackageMock->shouldReceive('getBinaries')
@@ -207,7 +208,7 @@ abstract class AbstractInstallerTest extends MockeryTestCase
         $this->packageMock->shouldReceive('getBinaries')
             ->andReturn([]);
         $this->packageMock->shouldReceive('getName')
-            ->andReturn(\trim($name, '/'));
+            ->andReturn(trim($name, '/'));
 
         $this->repositoryMock->shouldReceive('hasPackage')
             ->twice()

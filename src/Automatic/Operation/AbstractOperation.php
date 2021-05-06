@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -17,14 +17,21 @@ use Composer\IO\IOInterface;
 use Narrowspark\Automatic\Common\ClassFinder;
 use Narrowspark\Automatic\Common\Contract\Configurator as CommonConfiguratorContract;
 use Narrowspark\Automatic\Common\Contract\Package as PackageContract;
+use Narrowspark\Automatic\Common\Lock;
 use Narrowspark\Automatic\Contract\Configurator as ConfiguratorContract;
 use Narrowspark\Automatic\Contract\Operation as OperationContract;
 use Narrowspark\Automatic\Contract\PackageConfigurator as PackageConfiguratorContract;
-use Narrowspark\Automatic\Lock;
 use ReflectionClass;
 use ReflectionException;
 use SplFileInfo;
 use Symfony\Component\Filesystem\Filesystem;
+use const DIRECTORY_SEPARATOR;
+use function array_keys;
+use function count;
+use function implode;
+use function sprintf;
+use function strpos;
+use function strstr;
 
 abstract class AbstractOperation implements OperationContract
 {
@@ -45,7 +52,7 @@ abstract class AbstractOperation implements OperationContract
     /**
      * A lock instance.
      *
-     * @var \Narrowspark\Automatic\Lock
+     * @var \Narrowspark\Automatic\Common\Lock
      */
     protected $lock;
 
@@ -105,24 +112,24 @@ abstract class AbstractOperation implements OperationContract
         PackageConfiguratorContract $packageConfigurator,
         ConfiguratorContract $configurator
     ): void {
-        $packageConfigurators = \array_keys((array) $package->getConfig(CommonConfiguratorContract::TYPE));
+        $packageConfigurators = array_keys((array) $package->getConfig(CommonConfiguratorContract::TYPE));
 
-        foreach (\array_keys($configurator->getConfigurators()) as $key => $value) {
+        foreach (array_keys($configurator->getConfigurators()) as $key => $value) {
             if (isset($packageConfigurators[$key])) {
                 unset($packageConfigurators[$key]);
             }
         }
 
-        foreach (\array_keys($packageConfigurator->getConfigurators()) as $key => $value) {
+        foreach (array_keys($packageConfigurator->getConfigurators()) as $key => $value) {
             if (isset($packageConfigurators[$key])) {
                 unset($packageConfigurators[$key]);
             }
         }
 
-        if (\count($packageConfigurators) !== 0) {
-            $this->io->writeError(\sprintf(
+        if (count($packageConfigurators) !== 0) {
+            $this->io->writeError(sprintf(
                 '<warning>Configurators [%s] did not run for package [%s]</warning>',
-                \implode(', ', $packageConfigurators),
+                implode(', ', $packageConfigurators),
                 $package->getPrettyName()
             ));
         }
@@ -155,10 +162,10 @@ abstract class AbstractOperation implements OperationContract
         $composerAutoload = $package->getAutoload();
         $classes = [];
 
-        if (\count($composerAutoload) !== 0) {
+        if (count($composerAutoload) !== 0) {
             $classes = $this->classFinder->setComposerAutoload($name, $composerAutoload)
                 ->setFilter(static function (SplFileInfo $fileInfo) use ($name): bool {
-                    return \strpos((string) \strstr($fileInfo->getPathname(), $name), \DIRECTORY_SEPARATOR . 'Automatic' . \DIRECTORY_SEPARATOR) !== false;
+                    return strpos((string) strstr($fileInfo->getPathname(), $name), DIRECTORY_SEPARATOR . 'Automatic' . DIRECTORY_SEPARATOR) !== false;
                 })
                 ->find()
                 ->getAll();

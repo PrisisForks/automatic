@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -33,9 +33,11 @@ use Narrowspark\Automatic\Operation\Install;
 use Narrowspark\Automatic\Operation\Uninstall;
 use Narrowspark\Automatic\PackageConfigurator;
 use Narrowspark\Automatic\ScriptExecutor;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use function is_array;
+use function is_string;
 
 /**
  * @internal
@@ -44,7 +46,7 @@ use Symfony\Component\Filesystem\Filesystem;
  *
  * @medium
  */
-final class ContainerTest extends MockeryTestCase
+final class ContainerTest extends AbstractMockeryTestCase
 {
     /** @var \Narrowspark\Automatic\Container */
     private $container;
@@ -102,7 +104,7 @@ final class ContainerTest extends MockeryTestCase
     {
         $value = $this->container->get($key);
 
-        if (\is_string($value) || \is_array($value)) {
+        if (is_string($value) || is_array($value)) {
             self::assertSame($expected, $value);
         } else {
             self::assertInstanceOf($expected, $value);

@@ -3,12 +3,12 @@
 declare(strict_types=1);
 
 /**
- * This file is part of Narrowspark Framework.
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
- * (c) Daniel Bannert <d.bannert@anolilab.de>
+ * For the full copyright and license information, please view
+ * the LICENSE.md file that was distributed with this source code.
  *
- * This source file is subject to the MIT license that is bundled
- * with this source code in the file LICENSE.
+ * @see https://github.com/narrowspark/automatic
  */
 
 namespace Narrowspark\Automatic\Tests\Configurator;
@@ -18,7 +18,7 @@ use Composer\IO\NullIO;
 use Narrowspark\Automatic\Common\Contract\Configurator as ConfiguratorContract;
 use Narrowspark\Automatic\Common\Package;
 use Narrowspark\Automatic\Configurator\EnvConfigurator;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
 use function touch;
 use function unlink;
 
@@ -26,8 +26,9 @@ use function unlink;
  * @internal
  *
  * @medium
+ * @coversNothing
  */
-final class EnvConfiguratorTest extends MockeryTestCase
+final class EnvConfiguratorTest extends AbstractMockeryTestCase
 {
     /** @var \Composer\Composer */
     private $composer;

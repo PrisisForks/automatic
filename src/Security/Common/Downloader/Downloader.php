@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -18,9 +18,20 @@ use Composer\Composer;
 use Composer\Downloader\TransportException;
 use Composer\IO\IOInterface;
 use Composer\Json\JsonFile;
+use Composer\Util\HttpDownloader;
 use ErrorException;
 use Exception;
-use Narrowspark\Automatic\Security\Common\Contract\Exception\RuntimeException;
+use const DIRECTORY_SEPARATOR;
+use const JSON_THROW_ON_ERROR;
+use function array_key_exists;
+use function bin2hex;
+use function is_string;
+use function json_decode;
+use function json_encode;
+use function ltrim;
+use function preg_replace;
+use function random_bytes;
+use function usleep;
 
 /**
  * Ported from symfony flex, see original.
@@ -38,10 +49,13 @@ use Narrowspark\Automatic\Security\Common\Contract\Exception\RuntimeException;
  */
 class Downloader
 {
-    const RETRIES = 3;
+    private const RETRIES = 3;
 
     /** @var string */
     private $endpoint;
+
+    /** @var string */
+    private $caFile;
 
     /** @var \Composer\IO\IOInterface */
     private $io;
@@ -52,7 +66,7 @@ class Downloader
     /** @var \Composer\Cache */
     private $cache;
 
-    /** @var \Narrowspark\Automatic\Security\Common\Downloader\ParallelDownloader */
+    /** @var \Composer\Util\HttpDownloader */
     private $rfs;
 
     /** @var bool */
@@ -62,23 +76,25 @@ class Downloader
     private $enabled = true;
 
     /**
-     * Create a new Downloader instance.
-     *
-     * @param \Narrowspark\Automatic\Security\Common\Downloader\ParallelDownloader $rfs
-     *
      * @throws Exception
      */
-    public function __construct(string $endpoint, Composer $composer, IoInterface $io, ParallelDownloader $rfs)
-    {
+    public function __construct(
+        string $endpoint,
+        Composer $composer,
+        IoInterface $io,
+        HttpDownloader $rfs,
+        ?string $caFile = null
+    ) {
+        $this->caFile = $caFile;
         $this->endpoint = $endpoint;
         $this->io = $io;
         $config = $composer->getConfig();
         $this->rfs = $rfs;
         $this->cache = new ComposerCache(
             $io,
-            $config->get('cache-repo-dir') . \DIRECTORY_SEPARATOR . \preg_replace('{[^a-z0-9.]}i', '-', $this->endpoint)
+            $config->get('cache-repo-dir') . DIRECTORY_SEPARATOR . preg_replace('{[^a-z0-9.]}i', '-', $this->endpoint)
         );
-        $this->sess = \bin2hex(\random_bytes(16));
+        $this->sess = bin2hex(random_bytes(16));
     }
 
     /**
@@ -112,11 +128,11 @@ class Downloader
         }
 
         $headers[] = 'Package-Session: ' . $this->sess;
-        $url = $this->endpoint . '/' . \ltrim($path, '/');
-        $cacheKey = $cache ? \ltrim($path, '/') : null;
+        $url = $this->endpoint . '/' . ltrim($path, '/');
+        $cacheKey = $cache ? ltrim($path, '/') : null;
 
         if ($cacheKey !== null && false !== $contents = $this->cache->read($cacheKey)) {
-            $cachedResponse = JsonResponse::fromJson(\json_decode($contents, true));
+            $cachedResponse = JsonResponse::fromJson(json_decode($contents, true, 512, JSON_THROW_ON_ERROR));
 
             if ('' !== $lastModified = $cachedResponse->getHeader('last-modified')) {
                 $response = $this->fetchFileIfLastModified($url, $cacheKey, $lastModified, $headers);
@@ -140,23 +156,20 @@ class Downloader
     private function fetchFile(string $url, ?string $cacheKey, array $headers): JsonResponse
     {
         $retries = self::RETRIES;
+        $options = $this->getOptions($headers);
 
         while ($retries--) {
             try {
-                $json = $this->rfs->getContents($this->endpoint, $url, false, ['http' => ['header' => $headers]]);
+                $response = $this->rfs->get($url, $options);
 
-                if (\is_bool($json)) {
-                    throw new RuntimeException(\sprintf('Content for [%s%s] returned a boolean.', $this->endpoint, $url));
-                }
-
-                return $this->parseJson($json, $url, $cacheKey, $this->rfs->getLastHeaders());
+                return $this->parseJson($response->getBody(), $url, $cacheKey, $response->getHeaders());
             } catch (Exception $exception) {
                 if ($exception instanceof TransportException && 404 === $exception->getStatusCode()) {
                     throw $exception;
                 }
 
                 if ($retries !== 0) {
-                    \usleep(100000);
+                    usleep(100000);
 
                     continue;
                 }
@@ -186,26 +199,24 @@ class Downloader
         $headers[] = 'If-Modified-Since: ' . $lastModifiedTime;
         $retries = self::RETRIES;
 
+        $options = $this->getOptions($headers);
+
         while ($retries--) {
             try {
-                $json = $this->rfs->getContents($this->endpoint, $url, false, ['http' => ['header' => $headers]]);
+                $response = $this->rfs->get($url, $options);
 
-                if ($this->rfs->findStatusCode($this->rfs->getLastHeaders()) === 304) {
-                    return new JsonResponse(null, $this->rfs->getLastHeaders(), 304);
+                if ($response->getStatusCode() === 304) {
+                    return new JsonResponse([], $response->getHeaders(), 304);
                 }
 
-                if (\is_bool($json)) {
-                    throw new RuntimeException(\sprintf('Content for [%s%s] returned a boolean.', $this->endpoint, $url));
-                }
-
-                return $this->parseJson($json, $url, $cacheKey, $this->rfs->getLastHeaders());
+                return $this->parseJson($response->getBody(), $url, $cacheKey, $response->getHeaders());
             } catch (Exception $exception) {
                 if ($exception instanceof TransportException && $exception->getStatusCode() === 404) {
                     throw $exception;
                 }
 
                 if ($retries !== 0) {
-                    \usleep(100000);
+                    usleep(100000);
 
                     continue;
                 }
@@ -228,18 +239,18 @@ class Downloader
     {
         $data = JsonFile::parseJson($json, $url);
 
-        if (\array_key_exists('warning', $data) && \is_string($data['warning'])) {
+        if (array_key_exists('warning', $data) && is_string($data['warning'])) {
             $this->io->writeError('<warning>Warning from ' . $url . ': ' . $data['warning'] . '</>');
         }
 
-        if (\array_key_exists('info', $data) && \is_string($data['info'])) {
+        if (array_key_exists('info', $data) && is_string($data['info'])) {
             $this->io->writeError('<info>Info from ' . $url . ': ' . $data['info'] . '</>');
         }
 
         $response = new JsonResponse($data, $lastHeaders);
 
         if ($cacheKey !== null && $response->getHeader('last-modified') !== '') {
-            $this->cache->write($cacheKey, \json_encode($response));
+            $this->cache->write($cacheKey, json_encode($response, JSON_THROW_ON_ERROR));
         }
 
         return $response;
@@ -253,5 +264,16 @@ class Downloader
         }
 
         $this->degradedMode = true;
+    }
+
+    private function getOptions(array $headers): array
+    {
+        $options = ['http' => ['header' => $headers]];
+
+        if (null !== $this->caFile) {
+            $options['ssl']['cafile'] = $this->caFile;
+        }
+
+        return $options;
     }
 }

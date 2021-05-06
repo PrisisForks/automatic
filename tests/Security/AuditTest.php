@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -11,16 +11,29 @@ declare(strict_types=1);
  * @see https://github.com/narrowspark/automatic
  */
 
-namespace Narrowspark\Automatic\Security\Tests;
+namespace Narrowspark\Automatic\Tests\Security;
 
+use ArrayObject;
 use Exception;
 use Mockery;
 use Narrowspark\Automatic\Common\Downloader\Downloader;
 use Narrowspark\Automatic\Common\Downloader\JsonResponse;
 use Narrowspark\Automatic\Security\Audit;
 use Narrowspark\Automatic\Security\Contract\Exception\RuntimeException;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
-use Narrowspark\TestingHelper\Traits\AssertArrayTrait;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
+use Narrowspark\Automatic\Tests\Helper\Constraint\ArraySubset;
+use PHPUnit\Framework\Assert as PhpUnitAssert;
+use Traversable;
+use const DIRECTORY_SEPARATOR;
+use function array_map;
+use function array_merge;
+use function count;
+use function file_get_contents;
+use function glob;
+use function is_dir;
+use function json_decode;
+use function rmdir;
+use function unlink;
 
 /**
  * @internal
@@ -29,10 +42,8 @@ use Narrowspark\TestingHelper\Traits\AssertArrayTrait;
  *
  * @medium
  */
-final class AuditTest extends MockeryTestCase
+final class AuditTest extends AbstractMockeryTestCase
 {
-    use AssertArrayTrait;
-
     /** @var \Narrowspark\Automatic\Security\Audit */
     private $audit;
 
@@ -61,7 +72,7 @@ final class AuditTest extends MockeryTestCase
                 $header
             )
             ->andReturn(new JsonResponse(
-                \json_decode((string) \file_get_contents(__DIR__ . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'audit_db.json'), true),
+                json_decode((string) file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'audit_db.json'), true),
                 $header,
                 200
             ));
@@ -77,14 +88,14 @@ final class AuditTest extends MockeryTestCase
         parent::tearDown();
 
         $this->delete($this->path);
-        @\rmdir($this->path);
+        @rmdir($this->path);
     }
 
     public function testCheckPackageWithSymfony(): void
     {
         [$vulnerabilities, $messages] = $this->audit->checkPackage('symfony/symfony', 'v2.5.2', $this->audit->getSecurityAdvisories());
 
-        $this->assertSymfonySecurity(\count($vulnerabilities), $vulnerabilities);
+        $this->assertSymfonySecurity(count($vulnerabilities), $vulnerabilities);
         self::assertCount(0, $messages);
     }
 
@@ -92,21 +103,21 @@ final class AuditTest extends MockeryTestCase
     {
         [$vulnerabilities, $messages] = $this->audit->checkPackage('symfony/symfony', 'v2.5.2', $this->audit->getSecurityAdvisories());
 
-        $this->assertSymfonySecurity(\count($vulnerabilities), $vulnerabilities);
+        $this->assertSymfonySecurity(count($vulnerabilities), $vulnerabilities);
         self::assertCount(0, $messages);
 
         [$vulnerabilities] = $this->audit->checkPackage('symfony/symfony', 'v2.5.2', $this->audit->getSecurityAdvisories());
 
-        $this->assertSymfonySecurity(\count($vulnerabilities), $vulnerabilities);
+        $this->assertSymfonySecurity(count($vulnerabilities), $vulnerabilities);
     }
 
     public function testCheckLockWithSymfony252(): void
     {
         [$vulnerabilities, $messages] = $this->audit->checkLock(
-            __DIR__ . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'symfony_2.5.2_composer.lock'
+            __DIR__ . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'symfony_2.5.2_composer.lock'
         );
 
-        $this->assertSymfonySecurity(\count($vulnerabilities), $vulnerabilities);
+        $this->assertSymfonySecurity(count($vulnerabilities), $vulnerabilities);
         self::assertCount(0, $messages);
     }
 
@@ -115,7 +126,7 @@ final class AuditTest extends MockeryTestCase
         $this->audit->setDevMode(false);
 
         [$vulnerabilities, $messages] = $this->audit->checkLock(
-            __DIR__ . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'symfony_2.5.2_dev_packages_composer.lock'
+            __DIR__ . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'symfony_2.5.2_dev_packages_composer.lock'
         );
 
         self::assertCount(0, $vulnerabilities);
@@ -125,7 +136,7 @@ final class AuditTest extends MockeryTestCase
     public function testCheckLockWithComposer171(): void
     {
         [$vulnerabilities, $messages] = $this->audit->checkLock(
-            __DIR__ . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'composer_1.7.1_composer.lock'
+            __DIR__ . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'composer_1.7.1_composer.lock'
         );
 
         self::assertCount(0, $vulnerabilities);
@@ -146,6 +157,25 @@ final class AuditTest extends MockeryTestCase
     }
 
     /**
+     * Asserts that an array has a specified subset.
+     *
+     * @param ArrayObject|iterable|mixed[]|Traversable $subset
+     * @param ArrayObject|iterable|mixed[]|Traversable $array
+     *
+     * @throws \PHPUnit\Framework\ExpectationFailedException
+     * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+     * @throws Exception
+     */
+    public static function assertArraySubset(
+        ArrayObject | iterable $subset,
+        ArrayObject | iterable $array,
+        bool $checkForObjectIdentity = false,
+        string $message = ''
+    ): void {
+        PhpUnitAssert::assertThat($array, new ArraySubset($subset, $checkForObjectIdentity), $message);
+    }
+
+    /**
      * @param array<string, array<string, null|string>> $vulnerabilities
      *
      * @throws Exception
@@ -153,7 +183,7 @@ final class AuditTest extends MockeryTestCase
     private function assertSymfonySecurity(int $vulnerabilitiesCount, array $vulnerabilities): void
     {
         self::assertArraySubset(
-            \array_merge([
+            array_merge([
                 'symfony/symfony' => [
                     'version' => 'v2.5.2',
                     'advisories' => [
@@ -330,14 +360,14 @@ final class AuditTest extends MockeryTestCase
 
     private function delete(string $path): void
     {
-        \array_map(function (string $value): void {
-            if (\is_dir($value)) {
+        array_map(function (string $value): void {
+            if (is_dir($value)) {
                 $this->delete($value);
 
-                @\rmdir($value);
+                @rmdir($value);
             } else {
-                @\unlink($value);
+                @unlink($value);
             }
-        }, (array) \glob($path . \DIRECTORY_SEPARATOR . '*'));
+        }, (array) glob($path . DIRECTORY_SEPARATOR . '*'));
     }
 }

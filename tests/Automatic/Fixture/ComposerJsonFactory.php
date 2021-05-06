@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -12,6 +12,14 @@ declare(strict_types=1);
  */
 
 namespace Narrowspark\Automatic\Tests\Fixture;
+
+use const JSON_PRETTY_PRINT;
+use const JSON_UNESCAPED_SLASHES;
+use const JSON_UNESCAPED_UNICODE;
+use function count;
+use function file_get_contents;
+use function json_decode;
+use function json_encode;
 
 final class ComposerJsonFactory
 {
@@ -35,7 +43,7 @@ final class ComposerJsonFactory
             'extra' => $extra,
         ];
 
-        if (\count($devRequire) !== 0) {
+        if (count($devRequire) !== 0) {
             $composerJsonContent['require-dev'] = $devRequire;
         }
 
@@ -97,16 +105,16 @@ final class ComposerJsonFactory
 
     public static function jsonFileToArray(string $jsonFilePath): array
     {
-        return \json_decode(\file_get_contents($jsonFilePath), true);
+        return json_decode(file_get_contents($jsonFilePath), true);
     }
 
     public static function jsonToArray(string $jsonContent): array
     {
-        return \json_decode($jsonContent, true);
+        return json_decode($jsonContent, true);
     }
 
     public static function arrayToJson(array $jsonData): string
     {
-        return \json_encode($jsonData, \JSON_UNESCAPED_SLASHES | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE);
+        return json_encode($jsonData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 }

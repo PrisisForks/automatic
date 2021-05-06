@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -15,13 +15,14 @@ namespace Narrowspark\Automatic\Tests\Common;
 
 use Narrowspark\Automatic\Common\Path;
 use PHPUnit\Framework\TestCase;
+use const DIRECTORY_SEPARATOR;
 
 /**
  * @internal
  *
  * @covers \Narrowspark\Automatic\Common\Path
  *
- * @small
+ * @medium
  */
 final class PathTest extends TestCase
 {
@@ -46,7 +47,7 @@ final class PathTest extends TestCase
     public function testRelativize(): void
     {
         self::assertSame(
-            '.' . \DIRECTORY_SEPARATOR,
+            '.' . DIRECTORY_SEPARATOR,
             $this->path->relativize(__DIR__)
         );
     }
@@ -54,8 +55,8 @@ final class PathTest extends TestCase
     public function testConcatenateOnWindows(): void
     {
         self::assertEquals(
-            'c:' . \DIRECTORY_SEPARATOR . 'my-project' . \DIRECTORY_SEPARATOR . 'src' . \DIRECTORY_SEPARATOR . 'kernel.php',
-            $this->path->concatenate(['c:' . \DIRECTORY_SEPARATOR . 'my-project', 'src' . \DIRECTORY_SEPARATOR, 'kernel.php'])
+            'c:' . DIRECTORY_SEPARATOR . 'my-project' . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'kernel.php',
+            $this->path->concatenate(['c:' . DIRECTORY_SEPARATOR . 'my-project', 'src' . DIRECTORY_SEPARATOR, 'kernel.php'])
         );
     }
 
@@ -75,11 +76,11 @@ final class PathTest extends TestCase
     public static function provideConcatenateCases(): iterable
     {
         return [
-            [__DIR__, 'foo' . \DIRECTORY_SEPARATOR . 'bar.txt', __DIR__ . \DIRECTORY_SEPARATOR . 'foo' . \DIRECTORY_SEPARATOR . 'bar.txt'],
-            [__DIR__, \DIRECTORY_SEPARATOR . 'foo' . \DIRECTORY_SEPARATOR . 'bar.txt', __DIR__ . \DIRECTORY_SEPARATOR . 'foo' . \DIRECTORY_SEPARATOR . 'bar.txt'],
-            ['', 'foo' . \DIRECTORY_SEPARATOR . 'bar.txt', \DIRECTORY_SEPARATOR . 'foo' . \DIRECTORY_SEPARATOR . 'bar.txt'],
-            ['', \DIRECTORY_SEPARATOR . 'foo' . \DIRECTORY_SEPARATOR . 'bar.txt', \DIRECTORY_SEPARATOR . 'foo' . \DIRECTORY_SEPARATOR . 'bar.txt'],
-            ['.', 'foo' . \DIRECTORY_SEPARATOR . 'bar.txt', '.' . \DIRECTORY_SEPARATOR . 'foo' . \DIRECTORY_SEPARATOR . 'bar.txt'],
+            [__DIR__, 'foo' . DIRECTORY_SEPARATOR . 'bar.txt', __DIR__ . DIRECTORY_SEPARATOR . 'foo' . DIRECTORY_SEPARATOR . 'bar.txt'],
+            [__DIR__, DIRECTORY_SEPARATOR . 'foo' . DIRECTORY_SEPARATOR . 'bar.txt', __DIR__ . DIRECTORY_SEPARATOR . 'foo' . DIRECTORY_SEPARATOR . 'bar.txt'],
+            ['', 'foo' . DIRECTORY_SEPARATOR . 'bar.txt', DIRECTORY_SEPARATOR . 'foo' . DIRECTORY_SEPARATOR . 'bar.txt'],
+            ['', DIRECTORY_SEPARATOR . 'foo' . DIRECTORY_SEPARATOR . 'bar.txt', DIRECTORY_SEPARATOR . 'foo' . DIRECTORY_SEPARATOR . 'bar.txt'],
+            ['.', 'foo' . DIRECTORY_SEPARATOR . 'bar.txt', '.' . DIRECTORY_SEPARATOR . 'foo' . DIRECTORY_SEPARATOR . 'bar.txt'],
         ];
     }
 }

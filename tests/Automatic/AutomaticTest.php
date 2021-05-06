@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -44,11 +44,26 @@ use Narrowspark\Automatic\Lock;
 use Narrowspark\Automatic\ScriptEvents;
 use Narrowspark\Automatic\ScriptExecutor;
 use Narrowspark\Automatic\ScriptExtender\ScriptExtender;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
 use Narrowspark\Automatic\Tests\Traits\ArrangeComposerClassesTrait;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
 use Nyholm\NSA;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Filesystem\Filesystem;
+use const DIRECTORY_SEPARATOR;
+use function array_map;
+use function dirname;
+use function file_get_contents;
+use function file_put_contents;
+use function glob;
+use function is_dir;
+use function json_decode;
+use function json_encode;
+use function mb_substr;
+use function method_exists;
+use function mkdir;
+use function putenv;
+use function rmdir;
+use function unlink;
 
 /**
  * @internal
@@ -57,7 +72,7 @@ use Symfony\Component\Filesystem\Filesystem;
  *
  * @medium
  */
-final class AutomaticTest extends MockeryTestCase
+final class AutomaticTest extends AbstractMockeryTestCase
 {
     use ArrangeComposerClassesTrait;
     use GetGenericPropertyReaderTrait;
@@ -74,8 +89,8 @@ final class AutomaticTest extends MockeryTestCase
 
         $this->composerCachePath = __DIR__ . '/AutomaticTest';
 
-        @\mkdir($this->composerCachePath);
-        \putenv('COMPOSER_CACHE_DIR=' . $this->composerCachePath);
+        @mkdir($this->composerCachePath);
+        putenv('COMPOSER_CACHE_DIR=' . $this->composerCachePath);
 
         $this->arrangeComposerClasses();
 
@@ -96,17 +111,17 @@ final class AutomaticTest extends MockeryTestCase
 
         FunctionMock::$isOpensslActive = true;
 
-        \putenv('COMPOSER_CACHE_DIR=');
-        \putenv('COMPOSER_CACHE_DIR');
+        putenv('COMPOSER_CACHE_DIR=');
+        putenv('COMPOSER_CACHE_DIR');
 
-        $narrowsparkPath = __DIR__ . \DIRECTORY_SEPARATOR . 'narrowspark';
+        $narrowsparkPath = __DIR__ . DIRECTORY_SEPARATOR . 'narrowspark';
 
         $this->delete($this->composerCachePath);
         $this->delete($narrowsparkPath);
 
-        @\unlink($this->composerCachePath . \DIRECTORY_SEPARATOR . '.htaccess');
-        @\rmdir($this->composerCachePath);
-        @\rmdir($narrowsparkPath);
+        @unlink($this->composerCachePath . DIRECTORY_SEPARATOR . '.htaccess');
+        @rmdir($this->composerCachePath);
+        @rmdir($narrowsparkPath);
     }
 
     public function testGetSubscribedEvents(): void
@@ -166,7 +181,7 @@ final class AutomaticTest extends MockeryTestCase
             ->times(2)
             ->andReturn($downloadManagerMock);
 
-        if (! \method_exists(RemoteFilesystem::class, 'getRemoteContents')) {
+        if (! method_exists(RemoteFilesystem::class, 'getRemoteContents')) {
             $this->ioMock->shouldReceive('writeError')
                 ->once()
                 ->with('Composer >=1.7 not found, downloads will happen in sequence', true, IOInterface::DEBUG);
@@ -247,7 +262,7 @@ final class AutomaticTest extends MockeryTestCase
 
     public function testRecordWithInstallRecord(): void
     {
-        \putenv('COMPOSER_VENDOR_DIR=' . __DIR__);
+        putenv('COMPOSER_VENDOR_DIR=' . __DIR__);
 
         $automatic = new Automatic();
 
@@ -305,13 +320,13 @@ final class AutomaticTest extends MockeryTestCase
 
         $automatic->record($packageEventMock);
 
-        \putenv('COMPOSER_VENDOR_DIR=');
-        \putenv('COMPOSER_VENDOR_DIR');
+        putenv('COMPOSER_VENDOR_DIR=');
+        putenv('COMPOSER_VENDOR_DIR');
     }
 
     public function testRecordWithInstallRecordAndLock(): void
     {
-        \putenv('COMPOSER_VENDOR_DIR=' . __DIR__);
+        putenv('COMPOSER_VENDOR_DIR=' . __DIR__);
 
         $packageEventMock = Mockery::mock(PackageEvent::class);
 
@@ -345,13 +360,13 @@ final class AutomaticTest extends MockeryTestCase
         $this->plugin->setContainer($containerMock);
         $this->plugin->record($packageEventMock);
 
-        \putenv('COMPOSER_VENDOR_DIR=');
-        \putenv('COMPOSER_VENDOR_DIR');
+        putenv('COMPOSER_VENDOR_DIR=');
+        putenv('COMPOSER_VENDOR_DIR');
     }
 
     public function testRecordWithInstallRecordAndAutomaticPackage(): void
     {
-        \putenv('COMPOSER_VENDOR_DIR=' . __DIR__);
+        putenv('COMPOSER_VENDOR_DIR=' . __DIR__);
 
         $automatic = new Automatic();
 
@@ -429,13 +444,13 @@ final class AutomaticTest extends MockeryTestCase
         $automatic->record($packageEventMock);
         $automatic->record($automaticPackageEventMock);
 
-        \putenv('COMPOSER_VENDOR_DIR=');
-        \putenv('COMPOSER_VENDOR_DIR');
+        putenv('COMPOSER_VENDOR_DIR=');
+        putenv('COMPOSER_VENDOR_DIR');
     }
 
     public function testExecuteAutoScripts(): void
     {
-        \putenv('COMPOSER=' . __DIR__ . '/Fixture/composer.json');
+        putenv('COMPOSER=' . __DIR__ . '/Fixture/composer.json');
 
         $eventMock = Mockery::mock(Event::class);
         $eventMock->shouldReceive('stopPropagation')
@@ -451,7 +466,7 @@ final class AutomaticTest extends MockeryTestCase
         $lockMock->shouldReceive('get')
             ->once()
             ->with(ScriptExecutor::TYPE)
-            ->andReturn(['test/test' => [ScriptExtender::class => \dirname(__DIR__, 2) . '/Automatic/ScriptExtender.php']]);
+            ->andReturn(['test/test' => [ScriptExtender::class => dirname(__DIR__, 2) . '/Automatic/ScriptExtender.php']]);
 
         $containerMock = Mockery::mock(ContainerContract::class);
         $containerMock->shouldReceive('get')
@@ -466,13 +481,13 @@ final class AutomaticTest extends MockeryTestCase
         $this->plugin->setContainer($containerMock);
         $this->plugin->executeAutoScripts($eventMock);
 
-        \putenv('COMPOSER=');
-        \putenv('COMPOSER');
+        putenv('COMPOSER=');
+        putenv('COMPOSER');
     }
 
     public function testExecuteAutoScriptsWithNumericArray(): void
     {
-        \putenv('COMPOSER=' . __DIR__ . '/Fixture/composer-with-numeric-scripts.json');
+        putenv('COMPOSER=' . __DIR__ . '/Fixture/composer-with-numeric-scripts.json');
 
         $eventMock = Mockery::mock(Event::class);
         $eventMock->shouldReceive('stopPropagation')
@@ -489,13 +504,13 @@ final class AutomaticTest extends MockeryTestCase
         $this->plugin->setContainer($containerMock);
         $this->plugin->executeAutoScripts($eventMock);
 
-        \putenv('COMPOSER=');
-        \putenv('COMPOSER');
+        putenv('COMPOSER=');
+        putenv('COMPOSER');
     }
 
     public function testExecuteAutoScriptsWithoutScripts(): void
     {
-        \putenv('COMPOSER=' . __DIR__ . '/Fixture/composer-empty-scripts.json');
+        putenv('COMPOSER=' . __DIR__ . '/Fixture/composer-empty-scripts.json');
 
         $eventMock = Mockery::mock(Event::class);
         $eventMock->shouldReceive('stopPropagation')
@@ -514,8 +529,8 @@ final class AutomaticTest extends MockeryTestCase
         $this->plugin->setContainer($containerMock);
         $this->plugin->executeAutoScripts($eventMock);
 
-        \putenv('COMPOSER=');
-        \putenv('COMPOSER');
+        putenv('COMPOSER=');
+        putenv('COMPOSER');
     }
 
     public function testGetAutomaticLockFile(): void
@@ -533,8 +548,8 @@ final class AutomaticTest extends MockeryTestCase
             ->once()
             ->andReturn(true);
 
-        $filePath = __DIR__ . \DIRECTORY_SEPARATOR . 'composer_uninstall.json';
-        $lockfilePath = \mb_substr($filePath, 0, -4) . 'lock';
+        $filePath = __DIR__ . DIRECTORY_SEPARATOR . 'composer_uninstall.json';
+        $lockfilePath = mb_substr($filePath, 0, -4) . 'lock';
 
         $scripts = [
             ComposerScriptEvents::POST_INSTALL_CMD => [
@@ -546,12 +561,12 @@ final class AutomaticTest extends MockeryTestCase
             'test' => 'this should stay',
         ];
 
-        \file_put_contents($filePath, \json_encode([
+        file_put_contents($filePath, json_encode([
             'scripts' => $scripts,
         ]));
-        \file_put_contents($lockfilePath, \json_encode([]));
+        file_put_contents($lockfilePath, json_encode([]));
 
-        \putenv('COMPOSER=' . $filePath);
+        putenv('COMPOSER=' . $filePath);
 
         $this->composerMock->shouldReceive('getPackage->getScripts')
             ->once()
@@ -589,17 +604,17 @@ final class AutomaticTest extends MockeryTestCase
         $this->plugin->setContainer($containerMock);
         $this->plugin->onPostUninstall($event);
 
-        $jsonData = \json_decode(\file_get_contents($filePath), true);
+        $jsonData = json_decode(file_get_contents($filePath), true);
 
         self::assertArrayHasKey('test', $jsonData['scripts']);
         self::assertCount(0, $jsonData['scripts'][ComposerScriptEvents::POST_INSTALL_CMD]);
         self::assertCount(0, $jsonData['scripts'][ComposerScriptEvents::POST_INSTALL_CMD]);
 
-        \putenv('COMPOSER=');
-        \putenv('COMPOSER');
+        putenv('COMPOSER=');
+        putenv('COMPOSER');
 
-        @\unlink($filePath);
-        @\unlink($lockfilePath);
+        @unlink($filePath);
+        @unlink($lockfilePath);
     }
 
     public function testOnPostUninstallWithWithoutDev(): void
@@ -636,13 +651,13 @@ final class AutomaticTest extends MockeryTestCase
 
     public function testInitAutoScripts(): void
     {
-        $composerJsonPath = __DIR__ . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'testInitAutoScripts.json';
-        $composerLockPath = \mb_substr($composerJsonPath, 0, -4) . 'lock';
+        $composerJsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'testInitAutoScripts.json';
+        $composerLockPath = mb_substr($composerJsonPath, 0, -4) . 'lock';
 
-        \file_put_contents($composerJsonPath, \json_encode(['test' => []]));
-        \file_put_contents($composerLockPath, \json_encode(['packages' => []]));
+        file_put_contents($composerJsonPath, json_encode(['test' => []]));
+        file_put_contents($composerLockPath, json_encode(['packages' => []]));
 
-        \putenv('COMPOSER=' . $composerJsonPath);
+        putenv('COMPOSER=' . $composerJsonPath);
 
         $packageMock = Mockery::mock(PackageInterface::class);
         $packageMock->shouldReceive('getScripts')
@@ -663,7 +678,7 @@ final class AutomaticTest extends MockeryTestCase
 
         $this->plugin->initAutoScripts();
 
-        $jsonContent = \json_decode(\file_get_contents($composerJsonPath), true);
+        $jsonContent = json_decode(file_get_contents($composerJsonPath), true);
 
         self::assertTrue(isset($jsonContent['scripts']));
         self::assertTrue(isset($jsonContent['scripts']['post-install-cmd']));
@@ -671,15 +686,15 @@ final class AutomaticTest extends MockeryTestCase
         self::assertSame('@' . ScriptEvents::AUTO_SCRIPTS, $jsonContent['scripts']['post-install-cmd'][0]);
         self::assertSame('@' . ScriptEvents::AUTO_SCRIPTS, $jsonContent['scripts']['post-update-cmd'][0]);
 
-        $lockContent = \json_decode(\file_get_contents($composerLockPath), true);
+        $lockContent = json_decode(file_get_contents($composerLockPath), true);
 
         self::assertIsString($lockContent['content-hash']);
 
-        \putenv('COMPOSER=');
-        \putenv('COMPOSER');
+        putenv('COMPOSER=');
+        putenv('COMPOSER');
 
-        @\unlink($composerJsonPath);
-        @\unlink($composerLockPath);
+        @unlink($composerJsonPath);
+        @unlink($composerLockPath);
     }
 
     public function testInitAutoScriptsWithAutoScriptInComposerJson(): void
@@ -711,18 +726,18 @@ final class AutomaticTest extends MockeryTestCase
 
     public function testOnPostCreateProject(): void
     {
-        $composerJsonPath = __DIR__ . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'testOnPostCreateProject.json';
-        $composerLockPath = \mb_substr($composerJsonPath, 0, -4) . 'lock';
+        $composerJsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'testOnPostCreateProject.json';
+        $composerLockPath = mb_substr($composerJsonPath, 0, -4) . 'lock';
 
-        \file_put_contents($composerJsonPath, \json_encode([
+        file_put_contents($composerJsonPath, json_encode([
             'name' => 'narrowspark/narrowspark',
             'type' => 'project',
             'description' => 'A skeleton to start a new Narrowspark project.',
             'license' => 'MIT',
         ]));
-        \file_put_contents($composerLockPath, \json_encode(['packages' => []]));
+        file_put_contents($composerLockPath, json_encode(['packages' => []]));
 
-        \putenv('COMPOSER=' . $composerJsonPath);
+        putenv('COMPOSER=' . $composerJsonPath);
 
         $containerMock = $this->arrangeUpdateComposerLock();
         $containerMock->shouldReceive('get')
@@ -738,7 +753,7 @@ final class AutomaticTest extends MockeryTestCase
 
         $this->plugin->onPostCreateProject(Mockery::mock(Event::class));
 
-        $jsonContent = \json_decode(\file_get_contents($composerJsonPath), true);
+        $jsonContent = json_decode(file_get_contents($composerJsonPath), true);
 
         self::assertFalse(isset($jsonContent['name']));
         self::assertFalse(isset($jsonContent['description']));
@@ -748,15 +763,15 @@ final class AutomaticTest extends MockeryTestCase
         self::assertTrue(isset($jsonContent['extra']['test']));
         self::assertSame('foo', $jsonContent['extra']['test']);
 
-        $lockContent = \json_decode(\file_get_contents($composerLockPath), true);
+        $lockContent = json_decode(file_get_contents($composerLockPath), true);
 
         self::assertIsString($lockContent['content-hash']);
 
-        \putenv('COMPOSER=');
-        \putenv('COMPOSER');
+        putenv('COMPOSER=');
+        putenv('COMPOSER');
 
-        @\unlink($composerJsonPath);
-        @\unlink($composerLockPath);
+        @unlink($composerJsonPath);
+        @unlink($composerLockPath);
     }
 
     public function testRunSkeletonGeneratorWithoutInstaller(): void
@@ -821,7 +836,7 @@ final class AutomaticTest extends MockeryTestCase
         $containerMock->shouldReceive('get')
             ->once()
             ->with('vendor-dir')
-            ->andReturn(__DIR__ . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'Configurator');
+            ->andReturn(__DIR__ . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'Configurator');
 
         $this->plugin->setContainer($containerMock);
         $this->plugin->onPostAutoloadDump(Mockery::mock(Event::class));
@@ -868,7 +883,7 @@ final class AutomaticTest extends MockeryTestCase
         $containerMock->shouldReceive('get')
             ->twice()
             ->with('vendor-dir')
-            ->andReturn(__DIR__ . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'Configurator');
+            ->andReturn(__DIR__ . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'Configurator');
 
         $event = Mockery::mock(Event::class);
 
@@ -952,14 +967,14 @@ final class AutomaticTest extends MockeryTestCase
 
     private function delete(string $path): void
     {
-        \array_map(function ($value): void {
-            if (\is_dir($value)) {
+        array_map(function ($value): void {
+            if (is_dir($value)) {
                 $this->delete($value);
 
-                @\rmdir($value);
+                @rmdir($value);
             } else {
-                @\unlink($value);
+                @unlink($value);
             }
-        }, \glob($path . \DIRECTORY_SEPARATOR . '*'));
+        }, glob($path . DIRECTORY_SEPARATOR . '*'));
     }
 }

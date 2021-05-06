@@ -1,0 +1,51 @@
+{
+    "name": "narrowspark/automatic-composer-legacy-filter",
+    "type": "composer-plugin",
+    "description": "A composer plugin that filters legacy packages for a faster download.",
+    "keywords": [
+        "narrowspark",
+        "viserio",
+        "discovery",
+        "automatic",
+        "configurators",
+        "skeleton",
+        "library",
+        "composer",
+        "prefetcher",
+        "prefetch",
+        "legacy",
+        "filter"
+    ],
+    "homepage": "http://github.com/narrowspark/automatic",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Daniel Bannert",
+            "email": "d.bannert@anolilab.de",
+            "homepage": "http://www.anolilab.de",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.0",
+        "composer-plugin-api": "^2.0"
+    },
+    "require-dev": {
+        "ext-curl": "*"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0-dev"
+        },
+        "class": "Narrowspark\\Automatic\\LegacyFilter\\Plugin"
+    },
+    "autoload": {
+        "psr-4": {
+            "Narrowspark\\Automatic\\LegacyFilter\\": "/"
+        }
+    },
+    "support": {
+        "issues": "https://github.com/narrowspark/automatic/issues",
+        "source": "https://github.com/narrowspark/automatic"
+    }
+}

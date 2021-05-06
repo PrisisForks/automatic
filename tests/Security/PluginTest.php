@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @see https://github.com/narrowspark/automatic
  */
 
-namespace Narrowspark\Automatic\Security\Tests;
+namespace Narrowspark\Automatic\Tests\Security;
 
 use Composer\DependencyResolver\Operation\InstallOperation;
 use Composer\DependencyResolver\Operation\UninstallOperation;
@@ -26,11 +26,13 @@ use Narrowspark\Automatic\Common\Contract\Container as ContainerContract;
 use Narrowspark\Automatic\Security\CommandProvider;
 use Narrowspark\Automatic\Security\Contract\Audit as AuditContract;
 use Narrowspark\Automatic\Security\Plugin;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
 use Narrowspark\Automatic\Tests\Traits\ArrangeComposerClassesTrait;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
 use Nyholm\NSA;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use const DIRECTORY_SEPARATOR;
+use function putenv;
 
 /**
  * @internal
@@ -39,7 +41,7 @@ use Symfony\Component\Filesystem\Filesystem;
  *
  * @medium
  */
-final class PluginTest extends MockeryTestCase
+final class PluginTest extends AbstractMockeryTestCase
 {
     use ArrangeComposerClassesTrait;
 
@@ -65,7 +67,7 @@ final class PluginTest extends MockeryTestCase
 
         NSA::setProperty($this->plugin, 'container', $this->containerMock);
 
-        $this->tmpFolder = __DIR__ . \DIRECTORY_SEPARATOR . 'tmp';
+        $this->tmpFolder = __DIR__ . DIRECTORY_SEPARATOR . 'tmp';
     }
 
     /**
@@ -75,7 +77,7 @@ final class PluginTest extends MockeryTestCase
     {
         parent::tearDown();
 
-        (new Filesystem())->remove([$this->tmpFolder, __DIR__ . \DIRECTORY_SEPARATOR . 'narrowspark']);
+        (new Filesystem())->remove([$this->tmpFolder, __DIR__ . DIRECTORY_SEPARATOR . 'narrowspark']);
     }
 
     public function testActivate(): void
@@ -269,7 +271,7 @@ final class PluginTest extends MockeryTestCase
 
     public function testAuditComposerLock(): void
     {
-        \putenv('COMPOSER=' . __DIR__ . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'symfony_2.5.2_composer.json');
+        putenv('COMPOSER=' . __DIR__ . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'symfony_2.5.2_composer.json');
 
         $auditMock = Mockery::mock(AuditContract::class);
         $auditMock->shouldReceive('checkLock')
@@ -296,8 +298,8 @@ final class PluginTest extends MockeryTestCase
 
         self::assertCount(2, NSA::getProperty($this->plugin, 'foundVulnerabilities'));
 
-        \putenv('COMPOSER=');
-        \putenv('COMPOSER');
+        putenv('COMPOSER=');
+        putenv('COMPOSER');
     }
 
     /**

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -23,8 +23,8 @@ use Narrowspark\Automatic\Configurator;
 use Narrowspark\Automatic\Contract\PackageConfigurator as PackageConfiguratorContract;
 use Narrowspark\Automatic\Operation\Uninstall;
 use Narrowspark\Automatic\ScriptExecutor;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
 use Narrowspark\Automatic\Tests\Operation\Traits\ArrangeOperationsClassesTrait;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
 
 /**
  * @internal
@@ -33,7 +33,7 @@ use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
  *
  * @medium
  */
-final class UninstallTest extends MockeryTestCase
+final class UninstallTest extends AbstractMockeryTestCase
 {
     use ArrangeOperationsClassesTrait;
 

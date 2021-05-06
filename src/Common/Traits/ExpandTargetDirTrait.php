@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -13,6 +13,11 @@ declare(strict_types=1);
 
 namespace Narrowspark\Automatic\Common\Traits;
 
+use function preg_match;
+use function rtrim;
+use function str_replace;
+use function strtolower;
+
 trait ExpandTargetDirTrait
 {
     /**
@@ -20,18 +25,18 @@ trait ExpandTargetDirTrait
      */
     public static function expandTargetDir(array $options, string $target): string
     {
-        $found = \preg_match('{%(.+?)%}', $target, $matches);
+        $found = preg_match('{%(.+?)%}', $target, $matches);
 
         if ($found !== 1) {
             return $target;
         }
 
-        $option = \str_replace('_', '-', \strtolower($matches[1]));
+        $option = str_replace('_', '-', strtolower($matches[1]));
 
         if (! isset($options[$option])) {
             return $matches[0];
         }
 
-        return \str_replace($matches[0], \rtrim($options[$option], '/'), $target);
+        return str_replace($matches[0], rtrim($options[$option], '/'), $target);
     }
 }

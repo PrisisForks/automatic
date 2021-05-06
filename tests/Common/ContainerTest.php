@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -17,7 +17,10 @@ use Composer\Composer;
 use Mockery;
 use Narrowspark\Automatic\Common\AbstractContainer;
 use Narrowspark\Automatic\Common\Contract\Exception\InvalidArgumentException;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
+use function is_array;
+use function is_object;
+use function is_string;
 
 /**
  * @internal
@@ -26,7 +29,7 @@ use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
  *
  * @medium
  */
-final class ContainerTest extends MockeryTestCase
+final class ContainerTestAbstract extends AbstractMockeryTestCase
 {
     /** @var \Narrowspark\Automatic\Common\AbstractContainer */
     private $container;
@@ -57,11 +60,11 @@ final class ContainerTest extends MockeryTestCase
     {
         $value = $this->container->get($key);
 
-        if (\is_string($value) || (\is_array($value) && \is_array($expected))) {
+        if (is_string($value) || (is_array($value) && is_array($expected))) {
             self::assertSame($expected, $value);
         }
 
-        if (\is_object($value) && \is_string($expected)) {
+        if (is_object($value) && is_string($expected)) {
             self::assertInstanceOf($expected, $value);
         }
     }

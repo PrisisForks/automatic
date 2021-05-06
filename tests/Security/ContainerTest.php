@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -11,21 +11,25 @@ declare(strict_types=1);
  * @see https://github.com/narrowspark/automatic
  */
 
-namespace Narrowspark\Automatic\Security\Tests;
+namespace Narrowspark\Automatic\Tests\Security;
 
 use Composer\Composer;
 use Composer\Config;
 use Composer\Downloader\DownloadManager;
 use Composer\IO\IOInterface;
 use Composer\Package\RootPackageInterface;
-use Composer\Util\RemoteFilesystem;
+use Composer\Util\HttpDownloader;
 use Mockery;
 use Narrowspark\Automatic\Common\Downloader\Downloader;
-use Narrowspark\Automatic\Common\Downloader\ParallelDownloader;
 use Narrowspark\Automatic\Security\Audit;
 use Narrowspark\Automatic\Security\Container;
 use Narrowspark\Automatic\Security\Contract\Audit as AuditContract;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
+use const PHP_OS_FAMILY;
+use function is_array;
+use function is_object;
+use function is_string;
+use function sprintf;
 
 /**
  * @internal
@@ -34,7 +38,7 @@ use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
  *
  * @medium
  */
-final class ContainerTest extends MockeryTestCase
+final class ContainerTest extends AbstractMockeryTestCase
 {
     /** @var \Narrowspark\Automatic\Security\Container */
     private $container;
@@ -100,7 +104,7 @@ final class ContainerTest extends MockeryTestCase
         $this->ioMock->shouldReceive('writeError')
             ->with('<warning>You are running Composer with SSL/TLS protection disabled.</warning>');
 
-        if (\PHP_OS_FAMILY !== 'Windows') {
+        if (PHP_OS_FAMILY !== 'Windows') {
             $this->ioMock->shouldReceive('writeError')
                 ->with('<warning>Cannot create cache directory /https---automatic.narrowspark.com/, or directory is not writable. Proceeding without cache</warning>');
         }
@@ -117,11 +121,11 @@ final class ContainerTest extends MockeryTestCase
     {
         $value = $this->container->get($key);
 
-        if (\is_string($value) || (\is_array($value) && \is_array($expected))) {
+        if (is_string($value) || (is_array($value) && is_array($expected))) {
             self::assertSame($expected, $value);
         }
 
-        if (\is_object($value) && \is_string($expected)) {
+        if (is_object($value) && is_string($expected)) {
             self::assertInstanceOf($expected, $value);
         }
     }
@@ -139,9 +143,16 @@ final class ContainerTest extends MockeryTestCase
             ->with('https://automatic.narrowspark.com/security-advisories.json', Mockery::type(IOInterface::class));
 
         $this->ioMock->shouldReceive('writeError')
+            ->with('[200] https://automatic.narrowspark.com/security-advisories.json', true, IOInterface::DEBUG);
+        $this->ioMock->shouldReceive('writeError')
+            ->with('Downloading https://automatic.narrowspark.com/security-advisories.json if modified', true, IOInterface::DEBUG);
+        $this->ioMock->shouldReceive('writeError')
+            ->with('[304] https://automatic.narrowspark.com/security-advisories.json', true, IOInterface::DEBUG);
+        $this->ioMock->shouldReceive('writeError')
             ->with('Downloading the Security Advisories database...', true, IOInterface::VERBOSE);
         $this->ioMock->shouldReceive('writeError')
             ->with('Reading /https---automatic.narrowspark.com/security-advisories.json from cache', true, IOInterface::DEBUG);
+
         $this->ioMock->shouldReceive('hasAuthentication')
             ->andReturn(false);
         $this->ioMock->shouldReceive('writeError')
@@ -150,7 +161,7 @@ final class ContainerTest extends MockeryTestCase
             ->with('Downloading https://automatic.narrowspark.com/security-advisories.json', true, IOInterface::DEBUG);
 
         $this->ioMock->shouldReceive('writeError')
-            ->with(\sprintf('Writing %shttps---automatic.narrowspark.com/security-advisories.json into cache', \PHP_OS_FAMILY === 'Windows' ? '\\' : '/'), true, IOInterface::DEBUG);
+            ->with(sprintf('Writing %shttps---automatic.narrowspark.com/security-advisories.json into cache', PHP_OS_FAMILY === 'Windows' ? '\\' : '/'), true, IOInterface::DEBUG);
 
         self::assertNotCount(0, $this->container->get('security_advisories'));
     }
@@ -164,9 +175,8 @@ final class ContainerTest extends MockeryTestCase
             [Composer::class, Composer::class],
             [Config::class, Config::class],
             [IOInterface::class, IOInterface::class],
-            [RemoteFilesystem::class, RemoteFilesystem::class],
+            [HttpDownloader::class, HttpDownloader::class],
             ['composer-extra', []],
-            [ParallelDownloader::class, ParallelDownloader::class],
             [Downloader::class, Downloader::class],
             [AuditContract::class, Audit::class],
         ];
@@ -174,7 +184,7 @@ final class ContainerTest extends MockeryTestCase
 
     public function testGetAll(): void
     {
-        self::assertCount(10, $this->container->getAll());
+        self::assertCount(9, $this->container->getAll());
     }
 
     /**

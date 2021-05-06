@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -17,6 +17,9 @@ use DateTime;
 use DateTimeImmutable;
 use Exception;
 use Narrowspark\Automatic\Common\Contract\Package as PackageContract;
+use function array_key_exists;
+use function is_array;
+use function strtolower;
 
 final class Package implements PackageContract
 {
@@ -125,7 +128,7 @@ final class Package implements PackageContract
     public function __construct(string $name, ?string $prettyVersion)
     {
         $this->prettyName = $name;
-        $this->name = \strtolower($name);
+        $this->name = strtolower($name);
         $this->prettyVersion = $prettyVersion;
         $this->created = (new DateTimeImmutable())->format(DateTime::RFC3339);
     }
@@ -339,14 +342,14 @@ final class Package implements PackageContract
      */
     public function hasConfig(string $mainKey, ?string $name = null): bool
     {
-        $mainCheck = \array_key_exists($mainKey, $this->configs);
+        $mainCheck = array_key_exists($mainKey, $this->configs);
 
         if ($name === null) {
             return $mainCheck;
         }
 
-        if ($mainCheck && \is_array($this->configs[$mainKey])) {
-            return \array_key_exists($name, $this->configs[$mainKey]);
+        if ($mainCheck && is_array($this->configs[$mainKey])) {
+            return array_key_exists($name, $this->configs[$mainKey]);
         }
 
         return false;
@@ -354,17 +357,15 @@ final class Package implements PackageContract
 
     /**
      * {@inheritdoc}
-     *
-     * @return null|mixed
      */
-    public function getConfig(string $mainKey, ?string $name = null)
+    public function getConfig(string $mainKey, ?string $name = null): mixed
     {
-        if (\array_key_exists($mainKey, $this->configs)) {
+        if (array_key_exists($mainKey, $this->configs)) {
             if ($name === null) {
                 return $this->configs[$mainKey];
             }
 
-            if (\is_array($this->configs[$mainKey]) && \array_key_exists($name, $this->configs[$mainKey])) {
+            if (is_array($this->configs[$mainKey]) && array_key_exists($name, $this->configs[$mainKey])) {
                 return $this->configs[$mainKey][$name];
             }
         }

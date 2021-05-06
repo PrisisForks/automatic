@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @see https://github.com/narrowspark/automatic
  */
 
-namespace Narrowspark\Automatic\Security\Tests;
+namespace Narrowspark\Automatic\Tests\Security;
 
 use Narrowspark\Automatic\Security\Command\AuditCommand;
 use Narrowspark\Automatic\Security\CommandProvider;
@@ -22,7 +22,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \Narrowspark\Automatic\Security\CommandProvider
  *
- * @small
+ * @medium
  */
 final class CommandProviderTest extends TestCase
 {

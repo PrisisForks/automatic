@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -17,14 +17,15 @@ use Composer\Composer;
 use Composer\Config;
 use Composer\Factory;
 use Composer\IO\IOInterface;
-use Composer\Util\RemoteFilesystem;
+use Composer\Util\HttpDownloader;
 use Narrowspark\Automatic\Common\AbstractContainer;
 use Narrowspark\Automatic\Common\Contract\Container as ContainerContract;
 use Narrowspark\Automatic\Common\Downloader\Downloader;
-use Narrowspark\Automatic\Common\Downloader\ParallelDownloader;
 use Narrowspark\Automatic\Common\Traits\GetGenericPropertyReaderTrait;
 use Narrowspark\Automatic\Security\Contract\Audit as AuditContract;
 use Symfony\Component\Console\Input\InputInterface;
+use function getenv;
+use function rtrim;
 
 /**
  * @internal
@@ -53,8 +54,8 @@ final class Container extends AbstractContainer
             InputInterface::class => static function (ContainerContract $container) use ($genericPropertyReader): ?InputInterface {
                 return $genericPropertyReader($container->get(IOInterface::class), 'input');
             },
-            RemoteFilesystem::class => static function (ContainerContract $container): RemoteFilesystem {
-                return Factory::createRemoteFilesystem(
+            HttpDownloader::class => static function (ContainerContract $container): HttpDownloader {
+                return Factory::createHttpDownloader(
                     $container->get(IOInterface::class),
                     $container->get(Config::class)
                 );
@@ -62,31 +63,21 @@ final class Container extends AbstractContainer
             'composer-extra' => static function (ContainerContract $container) {
                 return $container->get(Composer::class)->getPackage()->getExtra();
             },
-            ParallelDownloader::class => static function (ContainerContract $container): ParallelDownloader {
-                $rfs = $container->get(RemoteFilesystem::class);
-
-                return new ParallelDownloader(
-                    $container->get(IOInterface::class),
-                    $container->get(Config::class),
-                    $rfs->getOptions(),
-                    $rfs->isTlsDisabled()
-                );
-            },
             Downloader::class => static function (ContainerContract $container): Downloader {
                 $composer = $container->get(Composer::class);
                 $io = $container->get(IOInterface::class);
 
-                $endpoint = \getenv('AUTOMATIC_SECURITY_ENDPOINT');
+                $endpoint = getenv('AUTOMATIC_SECURITY_ENDPOINT');
 
                 if ($endpoint === false) {
                     $endpoint = $container->get('composer-extra')[Plugin::COMPOSER_EXTRA_KEY]['endpoint'] ?? 'https://automatic.narrowspark.com';
                 }
 
                 return new Downloader(
-                    \rtrim($endpoint, '/'),
+                    rtrim($endpoint, '/'),
                     $composer,
                     $io,
-                    $container->get(ParallelDownloader::class)
+                    $container->get(HttpDownloader::class)
                 );
             },
             AuditContract::class => static function (ContainerContract $container): AuditContract {

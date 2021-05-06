@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -20,6 +20,9 @@ use Narrowspark\Automatic\Common\Contract\Configurator as ConfiguratorContract;
 use Narrowspark\Automatic\Common\Package;
 use Narrowspark\Automatic\Configurator\GitIgnoreConfigurator;
 use PHPUnit\Framework\TestCase;
+use function sys_get_temp_dir;
+use function touch;
+use function unlink;
 
 /**
  * @internal
@@ -54,9 +57,9 @@ final class GitignoreConfiguratorTest extends TestCase
 
         $this->configurator = new GitIgnoreConfigurator($this->composer, $this->nullIo, ['public-dir' => 'public']);
 
-        $this->gitignorePath = \sys_get_temp_dir() . '/.gitignore';
+        $this->gitignorePath = sys_get_temp_dir() . '/.gitignore';
 
-        \touch($this->gitignorePath);
+        touch($this->gitignorePath);
     }
 
     /**
@@ -66,7 +69,7 @@ final class GitignoreConfiguratorTest extends TestCase
     {
         parent::tearDown();
 
-        @\unlink($this->gitignorePath);
+        @unlink($this->gitignorePath);
     }
 
     public function testGetName(): void

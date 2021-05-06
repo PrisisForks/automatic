@@ -1,0 +1,88 @@
+{
+    "name": "das/sda",
+    "type": "project",
+    "license": "proprietary",
+    "description": "",
+    "require": {
+        "php": "^8.0",
+        "ext-ctype": "*",
+        "ext-iconv": "*",
+        "ext-mbstring": "*",
+        "cakephp/cakephp": "^4.0",
+        "laravel/framework": "^8.12",
+        "narrowspark/automatic-composer-legacy-filter": "dev-master",
+        "novactive/ezseobundle": "^2.2",
+        "symfony/symfony": "^5.0"
+    },
+    "replace": {
+        "symfony/polyfill-ctype": "*",
+        "symfony/polyfill-iconv": "*",
+        "symfony/polyfill-mbstring": "*",
+        "symfony/polyfill-php56": "*",
+        "symfony/polyfill-php70": "*",
+        "symfony/polyfill-php71": "*",
+        "symfony/polyfill-php72": "*",
+        "symfony/polyfill-php73": "*"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": {
+            "*": "dist"
+        },
+        "sort-packages": true
+    },
+    "extra": {
+        "app-dir": "app",
+        "automatic": {
+            "allow-auto-install": true
+        },
+        "legacy-filter": {
+            "require": {
+                "phpunit/phpunit": "^8.2.0",
+                "symfony/symfony": "^5.2",
+                "laravel/framework": "^7.0",
+                "cakephp/cakephp": "^4.0"
+            }
+        },
+        "config-dir": "config",
+        "database-dir": "database",
+        "public-dir": "public",
+        "resources-dir": "resources",
+        "routes-dir": "routes",
+        "storage-dir": "storage",
+        "tests-dir": "tests"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        },
+        "exclude-from-classmap": [
+            "tests/"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "post-install-cmd": [
+            "@auto-scripts"
+        ],
+        "post-update-cmd": [
+            "@auto-scripts"
+        ],
+        "auto-scripts": {}
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../src/LegacyFilter",
+            "options": {
+                "symlink": true
+            }
+        }
+    ]
+}

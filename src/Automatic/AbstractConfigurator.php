@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -19,6 +19,9 @@ use Narrowspark\Automatic\Common\Contract\Configurator as ConfiguratorContract;
 use Narrowspark\Automatic\Common\Contract\Exception\InvalidArgumentException;
 use Narrowspark\Automatic\Common\Contract\Package as PackageContract;
 use Narrowspark\Automatic\Contract\Configurator as MainConfiguratorContract;
+use function array_keys;
+use function is_subclass_of;
+use function sprintf;
 
 abstract class AbstractConfigurator implements MainConfiguratorContract
 {
@@ -76,11 +79,11 @@ abstract class AbstractConfigurator implements MainConfiguratorContract
     final public function add(string $name, string $configurator): void
     {
         if ($this->has($name)) {
-            throw new InvalidArgumentException(\sprintf('Configurator with the name [%s] already exists.', $name));
+            throw new InvalidArgumentException(sprintf('Configurator with the name [%s] already exists.', $name));
         }
 
-        if (! \is_subclass_of($configurator, ConfiguratorContract::class)) {
-            throw new InvalidArgumentException(\sprintf('The class [%s] must implement the interface [\\%s].', $configurator, ConfiguratorContract::class));
+        if (! is_subclass_of($configurator, ConfiguratorContract::class)) {
+            throw new InvalidArgumentException(sprintf('The class [%s] must implement the interface [\\%s].', $configurator, ConfiguratorContract::class));
         }
 
         $this->configurators[$name] = $configurator;
@@ -99,7 +102,7 @@ abstract class AbstractConfigurator implements MainConfiguratorContract
      */
     final public function configure(PackageContract $package): void
     {
-        foreach (\array_keys($this->configurators) as $key) {
+        foreach (array_keys($this->configurators) as $key) {
             if ($package->hasConfig(ConfiguratorContract::TYPE, $key)) {
                 $this->get($key)->configure($package);
             }
@@ -111,7 +114,7 @@ abstract class AbstractConfigurator implements MainConfiguratorContract
      */
     final public function unconfigure(PackageContract $package): void
     {
-        foreach (\array_keys($this->configurators) as $key) {
+        foreach (array_keys($this->configurators) as $key) {
             if ($package->hasConfig(ConfiguratorContract::TYPE, $key)) {
                 $this->get($key)->unconfigure($package);
             }

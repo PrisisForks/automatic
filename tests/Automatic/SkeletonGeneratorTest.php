@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -23,8 +23,10 @@ use Narrowspark\Automatic\Lock;
 use Narrowspark\Automatic\SkeletonGenerator;
 use Narrowspark\Automatic\Tests\Fixture\ConsoleFixtureGenerator;
 use Narrowspark\Automatic\Tests\Fixture\FrameworkDefaultFixtureGenerator;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
 use PHPUnit\Framework\Assert;
+use function file_exists;
+use function unlink;
 
 /**
  * @internal
@@ -34,7 +36,7 @@ use PHPUnit\Framework\Assert;
  *
  * @medium
  */
-final class SkeletonGeneratorTest extends MockeryTestCase
+final class SkeletonGeneratorTest extends AbstractMockeryTestCase
 {
     /** @var \Composer\IO\IOInterface|\Mockery\MockInterface */
     private $ioMock;
@@ -77,8 +79,8 @@ final class SkeletonGeneratorTest extends MockeryTestCase
 
         $path = __DIR__ . '/Fixture/test.php';
 
-        if (\file_exists($path)) {
-            @\unlink($path);
+        if (file_exists($path)) {
+            @unlink($path);
         }
     }
 

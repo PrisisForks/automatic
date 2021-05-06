@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -14,6 +14,9 @@ declare(strict_types=1);
 namespace Narrowspark\Automatic\Common\Downloader;
 
 use JsonSerializable;
+use function array_reverse;
+use function preg_match;
+use function strtolower;
 
 class JsonResponse implements JsonSerializable
 {
@@ -58,7 +61,7 @@ class JsonResponse implements JsonSerializable
      */
     public function getHeaders(string $name): array
     {
-        return $this->headers[\strtolower($name)] ?? [];
+        return $this->headers[strtolower($name)] ?? [];
     }
 
     /**
@@ -91,7 +94,7 @@ class JsonResponse implements JsonSerializable
      */
     public function getHeader(string $name): string
     {
-        return $this->headers[\strtolower($name)][0] ?? '';
+        return $this->headers[strtolower($name)][0] ?? '';
     }
 
     /**
@@ -126,10 +129,10 @@ class JsonResponse implements JsonSerializable
     {
         $values = [];
 
-        foreach (\array_reverse($headers) as $header) {
-            if (\preg_match('{^([^\:]+):\s*(.+?)\s*$}i', $header, $match) === 1) {
-                $values[\strtolower($match[1])][] = $match[2];
-            } elseif (\preg_match('{^HTTP/}i', $header) === 1) {
+        foreach (array_reverse($headers) as $header) {
+            if (preg_match('{^([^\:]+):\s*(.+?)\s*$}i', $header, $match) === 1) {
+                $values[strtolower($match[1])][] = $match[2];
+            } elseif (preg_match('{^HTTP/}i', $header) === 1) {
                 break;
             }
         }

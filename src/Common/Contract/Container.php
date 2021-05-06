@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -21,10 +21,8 @@ interface Container
      * @param string $id identifier of the entry to look for
      *
      * @throws \Narrowspark\Automatic\Common\Contract\Exception\InvalidArgumentException if no entry is found
-     *
-     * @return mixed
      */
-    public function get(string $id);
+    public function get(string $id): mixed;
 
     /**
      * Set a new entry to the container.

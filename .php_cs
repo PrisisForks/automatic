@@ -21,7 +21,7 @@ $mainLicense = $license(__DIR__);
 $mainLicense->save();
 
 $license(__DIR__ . '/src/Common')->save();
-$license(__DIR__ . '/src/Prefetcher')->save();
+$license(__DIR__ . '/src/LegacyFilter')->save();
 $license(__DIR__ . '/src/Security')->save();
 
 $config = new Config($mainLicense->header(), [
@@ -33,12 +33,6 @@ $config = new Config($mainLicense->header(), [
     ],
     'final_class' => false,
     'final_public_method_for_abstract_class' => false,
-    // @todo waiting for php-cs-fixer 2.16.2
-    'global_namespace_import' => [
-        'import_classes' => true,
-        'import_constants' => false,
-        'import_functions' => false,
-    ]
 ]);
 
 $config->getFinder()
@@ -46,11 +40,12 @@ $config->getFinder()
     ->in(__DIR__)
     ->exclude('build')
     ->exclude('vendor')
-    ->exclude('src/Prefetcher/Common')
-    ->notPath('src/Prefetcher/alias.php')
+    ->exclude('src/LegacyFilter/Common')
+    ->notPath('src/LegacyFilter/alias.php')
     ->exclude('src/Security/Common')
     ->notPath('src/Security/alias.php')
     ->notPath('tests/Automatic/Configurator/EnvConfiguratorTest.php')
+    ->notPath('rector.php')
     ->name('*.php')
     ->ignoreDotFiles(true)
     ->ignoreVCS(true);

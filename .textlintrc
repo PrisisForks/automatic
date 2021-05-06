@@ -30,6 +30,10 @@
         ]
     },
     "@textlint-rule/preset-google": true,
+    "write-good": {
+      "passive": false,
+      "eprime": false,
+    },
     "common-misspellings": true,
     "terminology": {
       "defaultTerms": false,

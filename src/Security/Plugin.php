@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -33,6 +33,17 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use Symfony\Component\Console\Input\InputInterface;
+use const DIRECTORY_SEPARATOR;
+use const PHP_INT_MAX;
+use function array_filter;
+use function class_exists;
+use function count;
+use function is_countable;
+use function sprintf;
+use function str_replace;
+use function strlen;
+use function substr;
+use function version_compare;
 
 final class Plugin implements Capable, EventSubscriberInterface, PluginInterface
 {
@@ -88,10 +99,10 @@ final class Plugin implements Capable, EventSubscriberInterface, PluginInterface
         }
 
         return [
-            PackageEvents::POST_PACKAGE_INSTALL => [['auditPackage', ~\PHP_INT_MAX]],
-            PackageEvents::POST_PACKAGE_UPDATE => [['auditPackage', ~\PHP_INT_MAX]],
-            ComposerScriptEvents::POST_INSTALL_CMD => [['auditComposerLock', \PHP_INT_MAX]],
-            ComposerScriptEvents::POST_UPDATE_CMD => [['auditComposerLock', \PHP_INT_MAX], ['onPostUpdatePostMessages', ~\PHP_INT_MAX]],
+            PackageEvents::POST_PACKAGE_INSTALL => [['auditPackage', ~PHP_INT_MAX]],
+            PackageEvents::POST_PACKAGE_UPDATE => [['auditPackage', ~PHP_INT_MAX]],
+            ComposerScriptEvents::POST_INSTALL_CMD => [['auditComposerLock', PHP_INT_MAX]],
+            ComposerScriptEvents::POST_UPDATE_CMD => [['auditComposerLock', PHP_INT_MAX], ['onPostUpdatePostMessages', ~PHP_INT_MAX]],
         ];
     }
 
@@ -104,13 +115,13 @@ final class Plugin implements Capable, EventSubscriberInterface, PluginInterface
         // that way, we are sure to use all files from the same version.
         foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__, FilesystemIterator::SKIP_DOTS)) as $file) {
             /** @var SplFileInfo $file */
-            if (\substr($file->getFilename(), -4) === '.php') {
-                \class_exists(__NAMESPACE__ . \str_replace('/', '\\', \substr($file->getFilename(), \strlen(__DIR__), -4)));
+            if (substr($file->getFilename(), -4) === '.php') {
+                class_exists(__NAMESPACE__ . str_replace('/', '\\', substr($file->getFilename(), strlen(__DIR__), -4)));
             }
         }
 
-        if (! \class_exists(AbstractContainer::class)) {
-            require __DIR__ . \DIRECTORY_SEPARATOR . 'alias.php';
+        if (! class_exists(AbstractContainer::class)) {
+            require __DIR__ . DIRECTORY_SEPARATOR . 'alias.php';
         }
 
         if (($errorMessage = $this->getErrorMessage()) !== null) {
@@ -147,6 +158,21 @@ final class Plugin implements Capable, EventSubscriberInterface, PluginInterface
 
     /**
      * {@inheritdoc}
+     */
+    public function deactivate(Composer $composer, IOInterface $io): void
+    {
+        self::$activated = false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function uninstall(Composer $composer, IOInterface $io): void
+    {
+    }
+
+    /**
+     * {@inheritdoc}
      *
      * @return string[]
      */
@@ -166,12 +192,12 @@ final class Plugin implements Capable, EventSubscriberInterface, PluginInterface
             return;
         }
 
-        $count = \count(\array_filter($this->foundVulnerabilities));
+        $count = count(array_filter($this->foundVulnerabilities));
         /** @var IOInterface $io */
         $io = $this->container->get(IOInterface::class);
 
         if ($count !== 0) {
-            $io->write('<error>[!]</> Audit Security Report: ' . \sprintf('%s vulnerabilit%s found - run "composer audit" for more information', $count, $count === 1 ? 'y' : 'ies'));
+            $io->write('<error>[!]</> Audit Security Report: ' . sprintf('%s vulnerabilit%s found - run "composer audit" for more information', $count, $count === 1 ? 'y' : 'ies'));
         } else {
             $io->write('<fg=black;bg=green>[+]</> Audit Security Report: No known vulnerabilities found');
         }
@@ -204,7 +230,7 @@ final class Plugin implements Capable, EventSubscriberInterface, PluginInterface
             $this->container->get('security_advisories')
         );
 
-        if ((\is_countable($data) ? \count($data) : 0) === 0) {
+        if ((is_countable($data) ? count($data) : 0) === 0) {
             return;
         }
 
@@ -216,7 +242,7 @@ final class Plugin implements Capable, EventSubscriberInterface, PluginInterface
      */
     public function auditComposerLock(): void
     {
-        if ($this->uninstallMode || \count($this->foundVulnerabilities) !== 0) {
+        if ($this->uninstallMode || count($this->foundVulnerabilities) !== 0) {
             return;
         }
 
@@ -224,7 +250,7 @@ final class Plugin implements Capable, EventSubscriberInterface, PluginInterface
         $audit = $this->container->get(AuditContract::class);
         $data = $audit->checkLock(Util::getComposerLockFile());
 
-        if (\count($data) === 0) {
+        if (empty($data)) {
             return;
         }
 
@@ -237,8 +263,8 @@ final class Plugin implements Capable, EventSubscriberInterface, PluginInterface
     private function getErrorMessage(): ?string
     {
         // @codeCoverageIgnoreStart
-        if (\version_compare(Util::getComposerVersion(), '1.8.0', '<')) {
-            return \sprintf('Your version "%s" of Composer is too old; Please upgrade', Composer::VERSION);
+        if (version_compare(Util::getComposerVersion(), '2.0.0', '<')) {
+            return sprintf('Your version "%s" of Composer is too old; Please upgrade', Composer::VERSION);
         }
         // @codeCoverageIgnoreEnd
 

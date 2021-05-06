@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -18,6 +18,7 @@ use Composer\IO\NullIO;
 use Narrowspark\Automatic\Common\ScriptExtender\PhpScriptExtender;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use function putenv;
 
 /**
  * @internal
@@ -66,8 +67,8 @@ final class PhpScriptExtenderTest extends TestCase
     public function testExpandWithIniLoad(): void
     {
         // clear the composer env
-        \putenv('COMPOSER_ORIGINAL_INIS=');
-        \putenv('COMPOSER_ORIGINAL_INIS');
+        putenv('COMPOSER_ORIGINAL_INIS=');
+        putenv('COMPOSER_ORIGINAL_INIS');
 
         $output = $this->extender->expand('echo "hallo";');
 

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -14,6 +14,10 @@ declare(strict_types=1);
 namespace Narrowspark\Automatic;
 
 use Narrowspark\Automatic\Common\Contract\Exception\InvalidArgumentException;
+use function in_array;
+use function sprintf;
+use function str_replace;
+use function strtolower;
 
 final class QuestionFactory
 {
@@ -30,10 +34,10 @@ final class QuestionFactory
         $message .= "    (defaults to <comment>n</comment>): \n";
 
         if ($url === null) {
-            return \sprintf($message, $name);
+            return sprintf($message, $name);
         }
 
-        return \sprintf("    Review the package from %s.\n" . $message, \str_replace('.git', '', $url), $name);
+        return sprintf("    Review the package from %s.\n" . $message, str_replace('.git', '', $url), $name);
     }
 
     /**
@@ -44,7 +48,7 @@ final class QuestionFactory
         $message = "    Do you want to add this package [%s] composer scripts?\n";
         $message .= "    (defaults to <comment>no</comment>): \n";
 
-        return \sprintf($message, $name);
+        return sprintf($message, $name);
     }
 
     /**
@@ -58,9 +62,9 @@ final class QuestionFactory
             return 'n';
         }
 
-        $value = \strtolower($value[0]);
+        $value = strtolower($value[0]);
 
-        if (! \in_array($value, ['y', 'n', 'a', 'p'], true)) {
+        if (! in_array($value, ['y', 'n', 'a', 'p'], true)) {
             throw new InvalidArgumentException('Invalid choice.');
         }
 

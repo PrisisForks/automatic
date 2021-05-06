@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -12,6 +12,8 @@ declare(strict_types=1);
  */
 
 namespace Narrowspark\Automatic\Tests\AutoReview;
+
+use const DIRECTORY_SEPARATOR;
 
 final class MirrorSettings
 {
@@ -23,8 +25,8 @@ final class MirrorSettings
     public const MIRROR_LIST = [
         [
             'output' => [
-                'path' => 'Prefetcher' . \DIRECTORY_SEPARATOR,
-                'namespace' => 'Automatic\\Prefetcher\\Common',
+                'path' => 'LegacyFilter' . DIRECTORY_SEPARATOR,
+                'namespace' => 'Automatic\\LegacyFilter\\Common',
             ],
             'mirror_list' => [
                 'src/Common/Contract/Exception/Exception.php' => self::COMMON_OPTIONS,
@@ -34,7 +36,6 @@ final class MirrorSettings
                 'src/Common/Contract/Resettable.php' => self::COMMON_OPTIONS,
                 'src/Common/Downloader/CurlDownloader.php' => self::COMMON_OPTIONS,
                 'src/Common/Downloader/Downloader.php' => self::COMMON_OPTIONS,
-                'src/Common/Downloader/ParallelDownloader.php' => self::COMMON_OPTIONS,
                 'src/Common/Downloader/JsonResponse.php' => self::COMMON_OPTIONS,
                 'src/Common/Traits/GetGenericPropertyReaderTrait.php' => self::COMMON_OPTIONS,
                 'src/Common/AbstractContainer.php' => self::COMMON_OPTIONS,
@@ -43,7 +44,7 @@ final class MirrorSettings
         ],
         [
             'output' => [
-                'path' => 'Security' . \DIRECTORY_SEPARATOR,
+                'path' => 'Security' . DIRECTORY_SEPARATOR,
                 'namespace' => 'Automatic\\Security\\Common',
             ],
             'mirror_list' => [
@@ -54,10 +55,31 @@ final class MirrorSettings
                 'src/Common/Contract/Resettable.php' => self::COMMON_OPTIONS,
                 'src/Common/Downloader/CurlDownloader.php' => self::COMMON_OPTIONS,
                 'src/Common/Downloader/Downloader.php' => self::COMMON_OPTIONS,
-                'src/Common/Downloader/ParallelDownloader.php' => self::COMMON_OPTIONS,
                 'src/Common/Downloader/JsonResponse.php' => self::COMMON_OPTIONS,
                 'src/Common/Traits/GetGenericPropertyReaderTrait.php' => self::COMMON_OPTIONS,
                 'src/Common/AbstractContainer.php' => self::COMMON_OPTIONS,
+                'src/Common/Util.php' => self::COMMON_OPTIONS,
+            ],
+        ],
+        [
+            'output' => [
+                'path' => 'Skeleton' . DIRECTORY_SEPARATOR,
+                'namespace' => 'Automatic\\Skeleton\\Common',
+            ],
+            'mirror_list' => [
+                'src/Common/Contract/Exception/Exception.php' => self::COMMON_OPTIONS,
+                'src/Common/Contract/Exception/InvalidArgumentException.php' => self::COMMON_OPTIONS,
+                'src/Common/Contract/Exception/RuntimeException.php' => self::COMMON_OPTIONS,
+                'src/Common/Contract/Exception/UnexpectedValueException.php' => self::COMMON_OPTIONS,
+                'src/Common/Contract/Container.php' => self::COMMON_OPTIONS,
+                'src/Common/Contract/Resettable.php' => self::COMMON_OPTIONS,
+                'src/Common/Installer/AbstractInstaller.php' => self::COMMON_OPTIONS,
+                'src/Common/Installer/AbstractInstallationManager.php' => self::COMMON_OPTIONS,
+                'src/Common/Installer/InstallationManager.php' => self::COMMON_OPTIONS,
+                'src/Common/Traits/GetGenericPropertyReaderTrait.php' => self::COMMON_OPTIONS,
+                'src/Common/AbstractContainer.php' => self::COMMON_OPTIONS,
+                'src/Common/ClassFinder.php' => self::COMMON_OPTIONS,
+                'src/Common/Lock.php' => self::COMMON_OPTIONS,
                 'src/Common/Util.php' => self::COMMON_OPTIONS,
             ],
         ],

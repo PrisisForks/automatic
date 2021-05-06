@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -13,8 +13,10 @@ declare(strict_types=1);
 
 namespace Narrowspark\Automatic;
 
+use Composer\Composer;
+use Composer\IO\IOInterface;
 use Narrowspark\Automatic\Common\Contract\Configurator as ConfiguratorContract;
-use Narrowspark\Automatic\Configurator\ComposerAutoScriptsConfigurator;
+use Narrowspark\Automatic\AutoScripts\Configurator\ComposerAutoScriptsConfigurator;
 use Narrowspark\Automatic\Configurator\ComposerScriptsConfigurator;
 use Narrowspark\Automatic\Configurator\CopyFromPackageConfigurator;
 use Narrowspark\Automatic\Configurator\EnvConfigurator;
@@ -28,12 +30,20 @@ final class Configurator extends AbstractConfigurator
      * @var array
      */
     protected $configurators = [
-        'composer-auto-scripts' => ComposerAutoScriptsConfigurator::class,
         'composer-scripts' => ComposerScriptsConfigurator::class,
         'copy' => CopyFromPackageConfigurator::class,
         'env' => EnvConfigurator::class,
         'gitignore' => GitIgnoreConfigurator::class,
     ];
+
+    public function __construct(Composer $composer, IOInterface $io, array $options)
+    {
+        parent::__construct($composer, $io, $options);
+
+        if (class_exists(ComposerAutoScriptsConfigurator::class)) {
+            $this->configurators['composer-auto-scripts'] = ComposerAutoScriptsConfigurator::class;
+        }
+    }
 
     /**
      * Cache found configurators from composer.json.
@@ -48,18 +58,19 @@ final class Configurator extends AbstractConfigurator
     public function reset(): void
     {
         $this->configurators = [
-            'composer-auto-scripts' => ComposerAutoScriptsConfigurator::class,
             'composer-scripts' => ComposerScriptsConfigurator::class,
             'copy' => CopyFromPackageConfigurator::class,
             'env' => EnvConfigurator::class,
             'gitignore' => GitIgnoreConfigurator::class,
         ];
+
+        if (class_exists(ComposerAutoScriptsConfigurator::class)) {
+            $this->configurators['composer-auto-scripts'] = ComposerAutoScriptsConfigurator::class;
+        }
+
         $this->cache = [];
     }
 
-    /**
-     * Get a configurator.
-     */
     protected function get(string $key): ConfiguratorContract
     {
         if (isset($this->cache[$key])) {

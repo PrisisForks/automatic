@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -15,24 +15,30 @@ namespace Narrowspark\Automatic\Tests\AutoReview;
 
 use Narrowspark\Automatic\Automatic;
 use PHPUnit\Framework\TestCase;
+use function explode;
+use function file_get_contents;
+use function json_decode;
+use function sprintf;
 
 /**
  * @internal
  *
  * @coversNothing
+ *
  * @group auto-review
  * @group covers-nothing
  *
- * @small
+ * @medium
  */
 final class ComposerTest extends TestCase
 {
     public function testBranchAlias(): void
     {
-        $composerJson = \json_decode(\file_get_contents(__DIR__ . '/../../composer.json'), true);
+        $composerJson = json_decode(file_get_contents(__DIR__ . '/../../composer.json'), true);
 
         if (! isset($composerJson['extra']['branch-alias'])) {
             $this->addToAssertionCount(1); // composer.json doesn't contain branch alias, all good!
+
             return;
         }
 
@@ -47,8 +53,8 @@ final class ComposerTest extends TestCase
      */
     private function convertAppVersionToAliasedVersion($version): string
     {
-        $parts = \explode('.', $version, 3);
+        $parts = explode('.', $version, 3);
 
-        return \sprintf('%d.%d-dev', $parts[0], $parts[1]);
+        return sprintf('%d.%d-dev', $parts[0], $parts[1]);
     }
 }

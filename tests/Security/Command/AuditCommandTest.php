@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -11,19 +11,27 @@ declare(strict_types=1);
  * @see https://github.com/narrowspark/automatic
  */
 
-namespace Narrowspark\Automatic\Security\Tests;
+namespace Narrowspark\Automatic\Tests\Security;
 
 use Mockery;
 use Narrowspark\Automatic\Common\Contract\Container as ContainerContract;
 use Narrowspark\Automatic\Security\Command\AuditCommand;
 use Narrowspark\Automatic\Security\Contract\Audit as AuditContract;
 use Narrowspark\Automatic\Security\Contract\Exception\RuntimeException;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
 use Nyholm\NSA;
 use PackageVersions\Versions;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use const DIRECTORY_SEPARATOR;
+use function dirname;
+use function putenv;
+use function strrpos;
+use function strstr;
+use function substr;
+use function trim;
+use function version_compare;
 
 /**
  * @internal
@@ -32,7 +40,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  *
  * @medium
  */
-final class AuditCommandTest extends MockeryTestCase
+final class AuditCommandTest extends AbstractMockeryTestCase
 {
     /** @var string */
     private $tmpFolder;
@@ -62,7 +70,7 @@ final class AuditCommandTest extends MockeryTestCase
     {
         parent::setUp();
 
-        $this->tmpFolder = __DIR__ . \DIRECTORY_SEPARATOR . 'tmp';
+        $this->tmpFolder = __DIR__ . DIRECTORY_SEPARATOR . 'tmp';
         $this->containerMock = Mockery::mock(ContainerContract::class);
 
         $this->auditMock = Mockery::mock(AuditContract::class);
@@ -78,7 +86,7 @@ final class AuditCommandTest extends MockeryTestCase
 
         $this->application = new Application();
 
-        $consoleVersion = \version_compare(Versions::getVersion('symfony/console'), '3.0.0', '<');
+        $consoleVersion = version_compare(Versions::getVersion('symfony/console'), '3.0.0', '<');
 
         $this->greenString = $consoleVersion ? '' : '[+]';
         $this->redString = $consoleVersion ? '' : '[!]';
@@ -86,23 +94,23 @@ final class AuditCommandTest extends MockeryTestCase
 
     public function testAuditCommand(): void
     {
-        $lockFilePath = \dirname(__DIR__, 1) . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'composer_1.7.1_composer.lock';
+        $lockFilePath = dirname(__DIR__, 1) . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'composer_1.7.1_composer.lock';
 
         $this->arrangeCheckLock($lockFilePath, [[], []]);
 
-        \putenv('COMPOSER=' . $lockFilePath);
+        putenv('COMPOSER=' . $lockFilePath);
 
         $commandTester = $this->executeCommand($this->command);
 
-        self::assertStringContainsString($this->greenString . ' No known vulnerabilities found', \trim($commandTester->getDisplay(true)));
+        self::assertStringContainsString($this->greenString . ' No known vulnerabilities found', trim($commandTester->getDisplay(true)));
 
-        \putenv('COMPOSER=');
-        \putenv('COMPOSER');
+        putenv('COMPOSER=');
+        putenv('COMPOSER');
     }
 
     public function testAuditCommandWithComposerLockOption(): void
     {
-        $lockFilePath = \dirname(__DIR__, 1) . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'composer_1.7.1_composer.lock';
+        $lockFilePath = dirname(__DIR__, 1) . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'composer_1.7.1_composer.lock';
 
         $this->arrangeCheckLock($lockFilePath, [[], []]);
 
@@ -111,7 +119,7 @@ final class AuditCommandTest extends MockeryTestCase
             ['--composer-lock' => $lockFilePath]
         );
 
-        $output = \trim($commandTester->getDisplay(true));
+        $output = trim($commandTester->getDisplay(true));
 
         self::assertStringContainsString('=== Audit Security Report ===', $output);
         self::assertStringContainsString('This checker can only detect vulnerabilities that are referenced', $output);
@@ -120,26 +128,26 @@ final class AuditCommandTest extends MockeryTestCase
 
     public function testAuditCommandWithNoDevMode(): void
     {
-        $lockFilePath = \dirname(__DIR__, 1) . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'composer_1.7.1_composer.lock';
+        $lockFilePath = dirname(__DIR__, 1) . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'composer_1.7.1_composer.lock';
 
         $this->arrangeCheckLock($lockFilePath, [[], []], true);
 
-        \putenv('COMPOSER=' . $lockFilePath);
+        putenv('COMPOSER=' . $lockFilePath);
 
         $commandTester = $this->executeCommand(
             $this->command,
             ['--no-dev' => true]
         );
 
-        $output = \trim($commandTester->getDisplay(true));
+        $output = trim($commandTester->getDisplay(true));
 
         self::assertStringContainsString('=== Audit Security Report ===', $output);
         self::assertStringContainsString('Check is running in no-dev mode. Skipping dev requirements check.', $output);
         self::assertStringContainsString('This checker can only detect vulnerabilities that are referenced', $output);
         self::assertStringContainsString($this->greenString . ' No known vulnerabilities found', $output);
 
-        \putenv('COMPOSER=');
-        \putenv('COMPOSER');
+        putenv('COMPOSER=');
+        putenv('COMPOSER');
     }
 
     public function testAuditCommandWithEmptyComposerLockPath(): void
@@ -156,15 +164,15 @@ final class AuditCommandTest extends MockeryTestCase
             ['--composer-lock' => $lockFilePath]
         );
 
-        $output = \trim($commandTester->getDisplay(true));
+        $output = trim($commandTester->getDisplay(true));
 
-        self::assertStringContainsString(\trim('=== Audit Security Report ==='), $output);
-        self::assertStringContainsString(\trim('Lock file does not exist.'), $output);
+        self::assertStringContainsString(trim('=== Audit Security Report ==='), $output);
+        self::assertStringContainsString(trim('Lock file does not exist.'), $output);
     }
 
     public function testAuditCommandWithError(): void
     {
-        $lockFilePath = \dirname(__DIR__, 1) . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'symfony_2.5.2_composer.lock';
+        $lockFilePath = dirname(__DIR__, 1) . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'symfony_2.5.2_composer.lock';
 
         $this->arrangeCheckLock($lockFilePath, [$this->arrangeSymfonyAuditDb(), []]);
 
@@ -173,7 +181,7 @@ final class AuditCommandTest extends MockeryTestCase
             ['--composer-lock' => $lockFilePath]
         );
 
-        $output = \trim($commandTester->getDisplay(true));
+        $output = trim($commandTester->getDisplay(true));
 
         self::assertStringContainsString('=== Audit Security Report ===', $output);
         self::assertStringContainsString('This checker can only detect vulnerabilities that are referenced', $output);
@@ -184,7 +192,7 @@ final class AuditCommandTest extends MockeryTestCase
 
     public function testAuditCommandWithErrorAndZeroExitCode(): void
     {
-        $lockFilePath = \dirname(__DIR__, 1) . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'symfony_2.5.2_composer.lock';
+        $lockFilePath = dirname(__DIR__, 1) . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'symfony_2.5.2_composer.lock';
 
         $this->arrangeCheckLock($lockFilePath, [$this->arrangeSymfonyAuditDb(), []]);
 
@@ -196,7 +204,7 @@ final class AuditCommandTest extends MockeryTestCase
             ]
         );
 
-        $output = \trim($commandTester->getDisplay(true));
+        $output = trim($commandTester->getDisplay(true));
 
         self::assertStringContainsString('=== Audit Security Report ===', $output);
         self::assertStringContainsString('This checker can only detect vulnerabilities that are referenced', $output);
@@ -207,7 +215,7 @@ final class AuditCommandTest extends MockeryTestCase
 
     public function testAuditCommandWithErrorZeroExitCodeAndVulnerabilities(): void
     {
-        $lockFilePath = \dirname(__DIR__, 1) . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'pygmentize_1.1_composer.lock';
+        $lockFilePath = dirname(__DIR__, 1) . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'pygmentize_1.1_composer.lock';
 
         $this->arrangeCheckLock($lockFilePath, [
             [
@@ -241,7 +249,7 @@ final class AuditCommandTest extends MockeryTestCase
             ]
         );
 
-        $output = \trim($commandTester->getDisplay(true));
+        $output = trim($commandTester->getDisplay(true));
 
         self::assertStringContainsString('=== Audit Security Report ===', $output);
         self::assertStringContainsString('This checker can only detect vulnerabilities that are referenced', $output);
@@ -252,7 +260,7 @@ final class AuditCommandTest extends MockeryTestCase
 
     public function testAuditCommandWithErrorArgument(): void
     {
-        $lockFilePath = \dirname(__DIR__, 1) . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'symfony_2.5.2_composer.lock';
+        $lockFilePath = dirname(__DIR__, 1) . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'symfony_2.5.2_composer.lock';
 
         $this->arrangeCheckLock($lockFilePath, [$this->arrangeSymfonyAuditDb(), []]);
 
@@ -264,9 +272,9 @@ final class AuditCommandTest extends MockeryTestCase
             ]
         );
 
-        $output = \trim($commandTester->getDisplay(true));
+        $output = trim($commandTester->getDisplay(true));
 
-        self::assertJson((string) \strstr(\substr($output, 0, (int) \strrpos($output, '}') + 1), '{'));
+        self::assertJson((string) strstr(substr($output, 0, (int) strrpos($output, '}') + 1), '{'));
         self::assertStringContainsString('=== Audit Security Report ===', $output);
         self::assertStringContainsString('This checker can only detect vulnerabilities that are referenced', $output);
         self::assertStringContainsString($this->redString . ' 1 vulnerability found - We recommend you to check the related security advisories and upgrade these dependencies.', $output);
@@ -274,7 +282,7 @@ final class AuditCommandTest extends MockeryTestCase
 
     public function testAuditCommandWithErrorAndSimpleFormat(): void
     {
-        $lockFilePath = \dirname(__DIR__, 1) . \DIRECTORY_SEPARATOR . 'Fixture' . \DIRECTORY_SEPARATOR . 'symfony_2.5.2_composer.lock';
+        $lockFilePath = dirname(__DIR__, 1) . DIRECTORY_SEPARATOR . 'Fixture' . DIRECTORY_SEPARATOR . 'symfony_2.5.2_composer.lock';
 
         $this->arrangeCheckLock($lockFilePath, [$this->arrangeSymfonyAuditDb(), []]);
 
@@ -286,10 +294,10 @@ final class AuditCommandTest extends MockeryTestCase
             ]
         );
 
-        $output = \trim($commandTester->getDisplay(true));
+        $output = trim($commandTester->getDisplay(true));
 
         self::assertStringContainsString('=== Audit Security Report ===', $output);
-        self::assertStringContainsString(\trim('symfony/symfony (v2.5.2)
+        self::assertStringContainsString(trim('symfony/symfony (v2.5.2)
 ------------------------
 '), $output);
         self::assertStringContainsString('This checker can only detect vulnerabilities that are referenced', $output);

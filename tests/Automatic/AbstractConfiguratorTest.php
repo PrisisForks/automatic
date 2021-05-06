@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -18,13 +18,13 @@ use Composer\IO\IOInterface;
 use Mockery;
 use Narrowspark\Automatic\Common\Contract\Exception\InvalidArgumentException;
 use Narrowspark\Automatic\Tests\Fixture\MockConfigurator;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
 use stdClass;
 
 /**
  * @internal
  */
-abstract class AbstractConfiguratorTest extends MockeryTestCase
+abstract class AbstractConfiguratorTest extends AbstractMockeryTestCase
 {
     /** @var \Composer\Composer|\Mockery\MockInterface */
     protected $composerMock;

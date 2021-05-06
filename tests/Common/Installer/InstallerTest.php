@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -21,18 +21,18 @@ use Composer\Package\Locker;
 use Composer\Package\RootPackageInterface;
 use Composer\Repository\RepositoryManager;
 use Mockery;
-use Narrowspark\Automatic\Common\Installer\Installer;
+use Narrowspark\Automatic\Common\Installer\InstallerFactory;
+use Narrowspark\Automatic\Tests\Helper\AbstractMockeryTestCase;
 use Narrowspark\Automatic\Tests\Traits\ArrangeComposerClassesTrait;
-use Narrowspark\TestingHelper\Phpunit\MockeryTestCase;
 
 /**
  * @internal
  *
- * @covers \Narrowspark\Automatic\Common\Installer\Installer
+ * @covers \Narrowspark\Automatic\Common\Installer\InstallerFactory
  *
  * @medium
  */
-final class InstallerTest extends MockeryTestCase
+final class InstallerTest extends AbstractMockeryTestCase
 {
     use ArrangeComposerClassesTrait;
 
@@ -79,7 +79,7 @@ final class InstallerTest extends MockeryTestCase
         $this->setupInstallerConfig(true, true, 'auto');
         $this->arrangeInput();
 
-        Installer::create($this->ioMock, $this->composerMock, $this->inputMock);
+        InstallerFactory::create($this->ioMock, $this->composerMock, $this->inputMock);
     }
 
     /**

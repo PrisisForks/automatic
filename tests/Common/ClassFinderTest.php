@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -24,6 +24,10 @@ use Narrowspark\Automatic\Tests\Common\Fixture\Finder\FooTrait;
 use Narrowspark\Automatic\Tests\Common\Fixture\Finder\Nested\DummyClassNested;
 use Narrowspark\Automatic\Tests\Common\Fixture\Finder\StaticFunctionAndClasses;
 use PHPUnit\Framework\TestCase;
+use function mkdir;
+use function rmdir;
+use function touch;
+use function unlink;
 
 /**
  * @internal
@@ -78,8 +82,8 @@ final class ClassFinderTest extends TestCase
         $dir = __DIR__ . '/Fixture/empty';
         $filePath = $dir . '/empty.php';
 
-        @\mkdir($dir);
-        @\touch($filePath);
+        @mkdir($dir);
+        @touch($filePath);
 
         $this->loader
             ->addPsr0('/Fixture/empty', [''])
@@ -90,8 +94,8 @@ final class ClassFinderTest extends TestCase
         self::assertSame([], $this->loader->getAbstractClasses());
         self::assertSame([], $this->loader->getInterfaces());
 
-        @\unlink($filePath);
-        @\rmdir($dir);
+        @unlink($filePath);
+        @rmdir($dir);
     }
 
     public function testSetComposerAutoload(): void

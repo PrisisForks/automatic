@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Copyright (c) 2018-2020 Daniel Bannert
+ * Copyright (c) 2018-2021 Daniel Bannert
  *
  * For the full copyright and license information, please view
  * the LICENSE.md file that was distributed with this source code.
@@ -18,10 +18,27 @@ use Composer\Package\Package;
 use Composer\Semver\Constraint\Constraint;
 use Composer\Semver\Constraint\MultiConstraint;
 use Composer\Semver\VersionParser;
+use JetBrains\PhpStorm\Pure;
 use Narrowspark\Automatic\Common\Downloader\Downloader;
 use Narrowspark\Automatic\Security\Contract\Audit as AuditContract;
 use Narrowspark\Automatic\Security\Contract\Exception\RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
+use const JSON_THROW_ON_ERROR;
+use const PHP_MAJOR_VERSION;
+use const PHP_MINOR_VERSION;
+use const PHP_RELEASE_VERSION;
+use function file_get_contents;
+use function function_exists;
+use function getenv;
+use function is_array;
+use function json_decode;
+use function ksort;
+use function php_uname;
+use function sprintf;
+use function str_contains;
+use function strlen;
+use function strpos;
+use function substr;
 
 final class Audit implements AuditContract
 {
@@ -53,9 +70,6 @@ final class Audit implements AuditContract
      */
     private $devMode = true;
 
-    /**
-     * Create a new Audit instance.
-     */
     public function __construct(Downloader $downloader)
     {
         $this->downloader = $downloader;
@@ -71,17 +85,18 @@ final class Audit implements AuditContract
         $this->devMode = $bool;
     }
 
-    public static function getUserAgent(): string
-    {
-        return \sprintf(
-            'Narrowspark-Security-Audit/%s (%s; %s; %s%s)',
-            Plugin::VERSION,
-            \function_exists('php_uname') ? \php_uname('s') : 'Unknown',
-            \function_exists('php_uname') ? \php_uname('r') : 'Unknown',
-            'PHP ' . \PHP_MAJOR_VERSION . '.' . \PHP_MINOR_VERSION . '.' . \PHP_RELEASE_VERSION,
-            \getenv('CI') !== false ? '; CI' : ''
-        );
-    }
+    #[Pure]
+ public static function getUserAgent(): string
+ {
+     return sprintf(
+         'Narrowspark-Security-Audit/%s (%s; %s; %s%s)',
+         Plugin::VERSION,
+         function_exists('php_uname') ? php_uname('s') : 'Unknown',
+         function_exists('php_uname') ? php_uname('r') : 'Unknown',
+         'PHP ' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . '.' . PHP_RELEASE_VERSION,
+         getenv('CI') !== false ? '; CI' : ''
+     );
+ }
 
     /**
      * {@inheritdoc}
@@ -98,7 +113,7 @@ final class Audit implements AuditContract
 
         [$messages, $vulnerabilities] = $this->checkPackageAgainstSecurityAdvisories($securityAdvisories, $package);
 
-        \ksort($vulnerabilities);
+        ksort($vulnerabilities);
 
         return [$vulnerabilities, $messages];
     }
@@ -144,7 +159,7 @@ final class Audit implements AuditContract
             [$messages, $vulnerabilities] = $this->checkPackageAgainstSecurityAdvisories($securityAdvisories, $package, $messages, $vulnerabilities);
         }
 
-        \ksort($vulnerabilities);
+        ksort($vulnerabilities);
 
         return [$vulnerabilities, $messages];
     }
@@ -170,11 +185,11 @@ final class Audit implements AuditContract
      */
     private function getLockContents(string $lock): array
     {
-        $contents = \json_decode((string) \file_get_contents($lock), true, 512, \JSON_THROW_ON_ERROR);
+        $contents = json_decode((string) file_get_contents($lock), true, 512, JSON_THROW_ON_ERROR);
         $packages = ['packages' => [], 'packages-dev' => []];
 
         foreach (['packages', 'packages-dev'] as $key) {
-            if (! \is_array($contents[$key])) {
+            if (! is_array($contents[$key])) {
                 continue;
             }
 
@@ -184,7 +199,7 @@ final class Audit implements AuditContract
                     'version' => $package['version'],
                 ];
 
-                if (isset($package['time']) && false !== \strpos($package['version'], 'dev')) {
+                if (isset($package['time']) && str_contains($package['version'], 'dev')) {
                     $data['time'] = $package['time'];
                 }
 
@@ -209,7 +224,7 @@ final class Audit implements AuditContract
         $name = $package->getName();
 
         foreach ($securityAdvisories[$name] as $key => $advisoryData) {
-            if (! \is_array($advisoryData['branches'])) {
+            if (! is_array($advisoryData['branches'])) {
                 $messages[$name][] = '"branches" is expected to be an array.';
 
                 continue;
@@ -217,9 +232,9 @@ final class Audit implements AuditContract
 
             foreach ($advisoryData['branches'] as $n => $branch) {
                 if (! isset($branch['versions'])) {
-                    $messages[$n][] = \sprintf('Key [versions] is not set for branch [%s].', $key);
-                } elseif (! \is_array($branch['versions'])) {
-                    $messages[$n][] = \sprintf('Key [versions] is expected to be an array for branch [%s].', $key);
+                    $messages[$n][] = sprintf('Key [versions] is not set for branch [%s].', $key);
+                } elseif (! is_array($branch['versions'])) {
+                    $messages[$n][] = sprintf('Key [versions] is expected to be an array for branch [%s].', $key);
                 } else {
                     $constraints = [];
 
@@ -227,7 +242,7 @@ final class Audit implements AuditContract
                         $op = null;
 
                         foreach (Constraint::getSupportedOperators() as $operators) {
-                            if (\strpos($version, (string) $operators) === 0) {
+                            if (strpos($version, (string) $operators) === 0) {
                                 $op = $operators;
 
                                 break;
@@ -235,19 +250,19 @@ final class Audit implements AuditContract
                         }
 
                         if (null === $op) {
-                            $messages[$n][] = \sprintf('Version [%s] does not contain a supported operator.', $version);
+                            $messages[$n][] = sprintf('Version [%s] does not contain a supported operator.', $version);
 
                             continue;
                         }
 
-                        $constraints[] = new Constraint($op, \substr($version, \strlen($op)));
+                        $constraints[] = new Constraint($op, substr($version, strlen($op)));
                     }
 
                     $affectedConstraint = new MultiConstraint($constraints);
                     $affectedPackage = $affectedConstraint->matches(new Constraint('==', $package->getVersion()));
 
                     if ($affectedPackage) {
-                        $composerPackage = \substr($advisoryData['reference'], 11);
+                        $composerPackage = substr($advisoryData['reference'], 11);
 
                         $vulnerabilities[$composerPackage] = $vulnerabilities[$composerPackage] ?? [
                             'version' => $package->getPrettyVersion(),
